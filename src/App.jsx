@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import TopNav from './components/TopNav.jsx';
 import InmateTable from './components/InmateTable.jsx';
 import AuditSidebar from './components/AuditSidebar.jsx';
@@ -73,7 +73,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 bg-cyber-grid p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-5">
       
       {/* Top Header & Operational Metrics */}
       <TopNav
@@ -92,11 +92,11 @@ export default function App() {
         onDutyGuards={onDutyGuards}
       />
 
-      {/* Main Grid: Directory Table & Audit Sidebar */}
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Main Grid: Directory Table & Audit Sidebar matching heights */}
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         
         {/* Main Content Area (Table Grid) */}
-        <section className="lg:col-span-8 space-y-4">
+        <section className="lg:col-span-8">
           <InmateTable
             inmates={searchedInmates}
             onSelectInmate={setSelectedInmate}
@@ -107,7 +107,7 @@ export default function App() {
         </section>
 
         {/* Audit Stream Sidebar */}
-        <section className="lg:col-span-4 h-full">
+        <section className="lg:col-span-4">
           <AuditSidebar
             logs={auditLogs}
             onOpenIncidentModal={() => {
