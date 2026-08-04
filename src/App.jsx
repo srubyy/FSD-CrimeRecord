@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TopNav from './components/TopNav.jsx';
 import InmateTable from './components/InmateTable.jsx';
 import AuditSidebar from './components/AuditSidebar.jsx';
@@ -11,6 +11,9 @@ export default function App() {
   const [inmates, setInmates] = useState(INITIAL_INMATES);
   const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
   
+  // Theme state: dark mode default
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
   // Filtering & Tab state
   const [searchTerm, setSearchTerm] = useState('');
   const [securityFilter, setSecurityFilter] = useState('ALL');
@@ -21,6 +24,15 @@ export default function App() {
   const [selectedInmate, setSelectedInmate] = useState(null);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [incidentInmateTarget, setIncidentInmateTarget] = useState(null);
+
+  // Sync dark class on html root element
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   // Derived metrics
   const totalInmates = inmates.length;
@@ -72,72 +84,77 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
-      
-      {/* Top Header & Quiet Stat Row */}
-      <TopNav
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        securityFilter={securityFilter}
-        setSecurityFilter={setSecurityFilter}
-        onOpenIntakeModal={() => setIsIntakeOpen(true)}
-        onOpenIncidentModal={() => {
-          setIncidentInmateTarget(null);
-          setIsIncidentModalOpen(true);
-        }}
-        totalInmates={totalInmates}
-        activeInCustody={activeInCustody}
-        highAlertFlags={highAlertFlags}
-        onDutyGuards={onDutyGuards}
-      />
-
-      {/* Main Content Grid: Directory Table & Audit Sidebar */}
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
         
-        {/* Main Content Area (Directory Table) */}
-        <section className="lg:col-span-8">
-          <InmateTable
-            inmates={searchedInmates}
-            onSelectInmate={setSelectedInmate}
-            onLogIncidentForInmate={handleOpenIncidentForInmate}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
-        </section>
+        {/* Top Header & Quiet Stat Row */}
+        <TopNav
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          securityFilter={securityFilter}
+          setSecurityFilter={setSecurityFilter}
+          onOpenIntakeModal={() => setIsIntakeOpen(true)}
+          onOpenIncidentModal={() => {
+            setIncidentInmateTarget(null);
+            setIsIncidentModalOpen(true);
+          }}
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          totalInmates={totalInmates}
+          activeInCustody={activeInCustody}
+          highAlertFlags={highAlertFlags}
+          onDutyGuards={onDutyGuards}
+        />
 
-        {/* Audit Stream Sidebar */}
-        <section className="lg:col-span-4">
-          <AuditSidebar
-            logs={auditLogs}
-            onOpenIncidentModal={() => {
-              setIncidentInmateTarget(null);
-              setIsIncidentModalOpen(true);
-            }}
-          />
-        </section>
+        {/* Main Content Grid */}
+        <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          
+          {/* Main Content Area (Directory Table) */}
+          <section className="lg:col-span-8">
+            <InmateTable
+              inmates={searchedInmates}
+              onSelectInmate={setSelectedInmate}
+              onLogIncidentForInmate={handleOpenIncidentForInmate}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+            />
+          </section>
 
-      </main>
+          {/* Audit Stream Sidebar */}
+          <section className="lg:col-span-4">
+            <AuditSidebar
+              logs={auditLogs}
+              onOpenIncidentModal={() => {
+                setIncidentInmateTarget(null);
+                setIsIncidentModalOpen(true);
+              }}
+            />
+          </section>
 
-      {/* Interactive Modals */}
-      <IntakeModal
-        isOpen={isIntakeOpen}
-        onClose={() => setIsIntakeOpen(false)}
-        onSubmit={handleIntakeSubmit}
-      />
+        </main>
 
-      <InmateDetailDrawer
-        inmate={selectedInmate}
-        onClose={() => setSelectedInmate(null)}
-        onLogIncident={handleOpenIncidentForInmate}
-      />
+        {/* Interactive Modals */}
+        <IntakeModal
+          isOpen={isIntakeOpen}
+          onClose={() => setIsIntakeOpen(false)}
+          onSubmit={handleIntakeSubmit}
+        />
 
-      <IncidentModal
-        isOpen={isIncidentModalOpen}
-        onClose={() => setIsIncidentModalOpen(false)}
-        onSubmit={handleIncidentSubmit}
-        selectedInmate={incidentInmateTarget}
-      />
+        <InmateDetailDrawer
+          inmate={selectedInmate}
+          onClose={() => setSelectedInmate(null)}
+          onLogIncident={handleOpenIncidentForInmate}
+          isDarkMode={isDarkMode}
+        />
 
+        <IncidentModal
+          isOpen={isIncidentModalOpen}
+          onClose={() => setIsIncidentModalOpen(false)}
+          onSubmit={handleIncidentSubmit}
+          selectedInmate={incidentInmateTarget}
+        />
+
+      </div>
     </div>
   );
 }

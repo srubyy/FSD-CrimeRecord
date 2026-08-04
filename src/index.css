@@ -5,8 +5,7 @@
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #090d16;
-    color: #f8fafc;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   
   code, kbd, samp, .font-mono {
@@ -25,10 +24,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.5);
+  background: rgba(148, 163, 184, 0.4);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(71, 85, 105, 0.8);
+  background: rgba(100, 116, 139, 0.6);
 }
