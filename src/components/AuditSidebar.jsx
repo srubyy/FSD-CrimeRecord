@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, AlertOctagon, ShieldAlert, CheckCircle2, Clock, Plus } from 'lucide-react';
+import { Activity, Plus, Clock } from 'lucide-react';
 
 export default function AuditSidebar({ logs, onOpenIncidentModal }) {
   const [filterSeverity, setFilterSeverity] = useState('ALL');
@@ -9,40 +9,40 @@ export default function AuditSidebar({ logs, onOpenIncidentModal }) {
     return log.severity === filterSeverity;
   });
 
-  const getSeverityIcon = (severity) => {
+  const getSeverityBadge = (severity) => {
     switch (severity) {
       case 'rose':
-        return <AlertOctagon className="w-3.5 h-3.5 text-rose-400" />;
+        return <span className="w-2 h-2 rounded-full bg-rose-500"></span>;
       case 'amber':
-        return <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />;
+        return <span className="w-2 h-2 rounded-full bg-amber-500"></span>;
       case 'emerald':
       default:
-        return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
+        return <span className="w-2 h-2 rounded-full bg-emerald-500"></span>;
     }
   };
 
   return (
-    <aside className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between h-[580px]">
-      {/* Header & Live Indicator */}
-      <div className="space-y-3 pb-3 border-b border-slate-800">
+    <aside className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between h-[540px]">
+      {/* Header & Live Status */}
+      <div className="space-y-3 pb-3 border-b border-slate-800/80">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-slate-400" />
-            <h2 className="text-xs font-bold text-slate-100 font-mono uppercase tracking-wider">
-              Facility Audit Feed
+            <h2 className="text-sm font-bold text-slate-100 font-sans tracking-tight">
+              Facility audit feed
             </h2>
           </div>
 
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             LIVE
           </span>
         </div>
 
-        {/* Severity Filter Pills */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px] font-mono">
+        {/* Severity Filter Tabs */}
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-sans">
           {[
-            { id: 'ALL', label: 'All Logs' },
+            { id: 'ALL', label: 'All' },
             { id: 'rose', label: 'Critical' },
             { id: 'amber', label: 'Warning' },
             { id: 'emerald', label: 'System' }
@@ -50,9 +50,9 @@ export default function AuditSidebar({ logs, onOpenIncidentModal }) {
             <button
               key={tab.id}
               onClick={() => setFilterSeverity(tab.id)}
-              className={`flex-1 py-1 rounded text-center font-medium transition-colors cursor-pointer ${
+              className={`flex-1 py-0.5 rounded text-center text-xs font-medium transition-colors cursor-pointer ${
                 filterSeverity === tab.id
-                  ? 'bg-slate-800 text-slate-100 border border-slate-700'
+                  ? 'bg-slate-800 text-slate-100'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -62,56 +62,56 @@ export default function AuditSidebar({ logs, onOpenIncidentModal }) {
         </div>
       </div>
 
-      {/* Log Feed Items with Scrollable Container */}
+      {/* Log Stream Items */}
       <div className="flex-1 my-3 overflow-y-auto space-y-2.5 pr-1">
         {filteredLogs.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 font-mono text-xs">
-            No audit logs found for selected filter.
+          <div className="text-center py-12 text-slate-500 font-sans text-xs">
+            No audit logs found.
           </div>
         ) : (
           filteredLogs.map((log) => (
             <div 
               key={log.id} 
-              className="p-3 rounded-lg bg-slate-950/70 border border-slate-800/80 hover:border-slate-700/80 transition-colors space-y-1.5 group"
+              className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 space-y-1.5 group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {getSeverityIcon(log.severity)}
-                  <span className="font-mono text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">
+                  {getSeverityBadge(log.severity)}
+                  <span className="font-sans text-xs font-semibold text-slate-100">
                     {log.action}
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono">
+                <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono">
                   <Clock className="w-3 h-3" />
                   <span>{log.timestamp}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-300 font-mono">
+              <p className="text-xs text-slate-300 font-sans">
                 {log.target}
               </p>
 
-              <div className="text-[11px] text-slate-400 bg-slate-900/60 p-2 rounded border border-slate-800/60 leading-relaxed">
+              <div className="text-xs text-slate-400 bg-slate-900/80 p-2 rounded border border-slate-800/60 leading-relaxed font-sans">
                 {log.details}
               </div>
 
-              <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-0.5">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-0.5">
                 <span>By: {log.user}</span>
-                <span className="uppercase text-slate-500">ID: {log.id}</span>
+                <span>ID: {log.id}</span>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Footer CTA Button */}
+      {/* Footer CTA */}
       <div className="pt-2 border-t border-slate-800">
         <button
           onClick={onOpenIncidentModal}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold font-mono bg-slate-800 hover:bg-slate-700/80 text-slate-200 border border-slate-700 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold font-sans bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5 text-slate-400" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Post Manual Incident Log</span>
         </button>
       </div>

@@ -46,7 +46,6 @@ export default function App() {
   const handleIntakeSubmit = (newRecord) => {
     setInmates(prev => [newRecord, ...prev]);
 
-    // Also log to audit stream
     const auditEntry = {
       id: `LOG-${Math.floor(9000 + Math.random() * 999)}`,
       timestamp: 'Just now',
@@ -73,9 +72,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-5">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
       
-      {/* Top Header & Operational Metrics */}
+      {/* Top Header & Quiet Stat Row */}
       <TopNav
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -92,10 +91,10 @@ export default function App() {
         onDutyGuards={onDutyGuards}
       />
 
-      {/* Main Grid: Directory Table & Audit Sidebar matching heights */}
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      {/* Main Content Grid: Directory Table & Audit Sidebar */}
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        {/* Main Content Area (Table Grid) */}
+        {/* Main Content Area (Directory Table) */}
         <section className="lg:col-span-8">
           <InmateTable
             inmates={searchedInmates}
@@ -119,7 +118,7 @@ export default function App() {
 
       </main>
 
-      {/* Interactive Modals & Slide-Over Drawers */}
+      {/* Interactive Modals */}
       <IntakeModal
         isOpen={isIntakeOpen}
         onClose={() => setIsIntakeOpen(false)}
