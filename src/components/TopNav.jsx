@@ -1,11 +1,13 @@
 import React, { useContext } from 'react';
-import { Search, Plus, Filter, Bell, Shield, Sun, Moon } from 'lucide-react';
+import { Search, Plus, Filter, Bell, Shield, Sun, Moon, UserCheck, KeyRound } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import StatCard from './StatCard.jsx';
 import { AppContext } from '../context/AppContext.jsx';
 
 export default function TopNav({ 
   onOpenIntakeModal,
   onOpenIncidentModal,
+  onOpenAuthModal,
   totalInmates,
   activeInCustody,
   highAlertFlags,
@@ -19,11 +21,22 @@ export default function TopNav({
     securityFilter, 
     setSecurityFilter 
   } = useContext(AppContext);
+
+  const currentUser = useSelector((state) => state.auth.user);
+  const role = currentUser?.role || 'Officer';
+
+  const roleStyle = 
+    role === 'Admin'
+      ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800'
+      : role === 'Warden'
+      ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800'
+      : 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/80 dark:text-sky-300 dark:border-sky-800';
+
   return (
     <header className="space-y-6">
       {/* Top Header & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Brand */}
+        {/* Brand & Auth Status */}
         <div className="flex items-center gap-3">
           <div className="p-2 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-300">
             <Shield className="w-5 h-5" />
@@ -32,9 +45,20 @@ export default function TopNav({
             <h1 className="text-base font-bold text-slate-900 dark:text-slate-100 font-sans tracking-tight">
               CrimeNet OS <span className="text-slate-400 dark:text-slate-500 font-normal">// Facility Control</span>
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-              MAX-SEC-09 • DEFCON 4 ONLINE
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                MAX-SEC-09
+              </span>
+              <span className="text-slate-400 dark:text-slate-600">•</span>
+              <button
+                onClick={onOpenAuthModal}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-semibold border cursor-pointer ${roleStyle}`}
+                title="Click to Switch User or Register Account"
+              >
+                <UserCheck className="w-3 h-3" />
+                <span>{currentUser?.username || 'Guest'} ({role})</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -52,6 +76,16 @@ export default function TopNav({
             ) : (
               <Moon className="w-4 h-4 text-slate-700" />
             )}
+          </button>
+
+          {/* Switch Staff / Auth Login Button */}
+          <button
+            onClick={onOpenAuthModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
+            title="Switch User Role / Authenticate"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-sky-500" />
+            <span className="hidden md:inline">Switch Staff</span>
           </button>
 
           {/* Search */}

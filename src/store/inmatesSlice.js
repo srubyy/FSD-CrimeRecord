@@ -21,8 +21,11 @@ export const inmatesSlice = createSlice({
     addInmate: (state, action) => {
       state.unshift(action.payload);
     },
+    deleteInmate: (state, action) => {
+      return state.filter((inmate) => inmate.id !== action.payload);
+    },
   },
 });
 
-export const { addInmate } = inmatesSlice.actions;
+export const { addInmate, deleteInmate } = inmatesSlice.actions;
 export default inmatesSlice.reducer;

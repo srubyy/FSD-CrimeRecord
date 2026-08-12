@@ -1,14 +1,17 @@
 import React, { useState, useContext } from 'react';
-import { Eye, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, AlertTriangle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import StatusBadge from './StatusBadge.jsx';
 import { AppContext } from '../context/AppContext.jsx';
 
 export default function InmateTable({ 
   inmates, 
   onSelectInmate, 
-  onLogIncidentForInmate
+  onLogIncidentForInmate,
+  onDeleteInmate
 }) {
   const { activeTab, setActiveTab } = useContext(AppContext);
+  const currentUser = useSelector((state) => state.auth.user);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -157,6 +160,19 @@ export default function InmateTable({
                           title="Log Security Incident"
                         >
                           <AlertTriangle className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => onDeleteInmate && onDeleteInmate(inmate)}
+                          disabled={currentUser?.role !== 'Admin'}
+                          className={`p-1.5 rounded transition-colors cursor-pointer ${
+                            currentUser?.role === 'Admin'
+                              ? 'bg-rose-100 hover:bg-rose-200 dark:bg-rose-950/80 dark:hover:bg-rose-900 text-rose-600 dark:text-rose-300'
+                              : 'opacity-30 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400'
+                          }`}
+                          title={currentUser?.role === 'Admin' ? "Expunge Record (Admin Only)" : "Delete Restricted to Admin Role"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>

@@ -6,8 +6,9 @@ import AuditSidebar from './components/AuditSidebar.jsx';
 import IntakeModal from './components/IntakeModal.jsx';
 import InmateDetailDrawer from './components/InmateDetailDrawer.jsx';
 import IncidentModal from './components/IncidentModal.jsx';
+import AuthModal from './components/AuthModal.jsx';
 import { AppContext } from './context/AppContext.jsx';
-import { addInmate } from './store/inmatesSlice.js';
+import { addInmate, deleteInmate } from './store/inmatesSlice.js';
 import { addAuditLog } from './store/auditLogsSlice.js';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
   // Redux domain state
   const inmates = useSelector(state => state.inmates);
   const auditLogs = useSelector(state => state.auditLogs);
+  const currentUser = useSelector(state => state.auth.user);
 
   // Consume global UI context (useContext)
   const { isDarkMode, searchTerm, securityFilter } = useContext(AppContext);
@@ -25,6 +27,7 @@ export default function App() {
   const [selectedInmate, setSelectedInmate] = useState(null);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [incidentInmateTarget, setIncidentInmateTarget] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Sync dark class on html root element (useEffect)
   useEffect(() => {
@@ -62,7 +65,7 @@ export default function App() {
     const auditEntry = {
       id: `LOG-${Math.floor(9000 + Math.random() * 999)}`,
       timestamp: 'Just now',
-      user: 'Intake Officer (Terminal #01)',
+      user: `${currentUser?.username || 'Staff'} (${currentUser?.role || 'Officer'})`,
       action: 'New Prisoner Intake Registered',
       target: `Inmate ${newRecord.fullName} (${newRecord.id})`,
       type: 'intake',
@@ -73,9 +76,38 @@ export default function App() {
     dispatch(addAuditLog(auditEntry));
   };
 
+  // Handler for deleting an inmate record (Admin only)
+  const handleDeleteInmate = (inmateToDelete) => {
+    if (currentUser?.role !== 'Admin') {
+      alert('Access Denied: Only Admin users can expunge inmate records.');
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to expunge record ${inmateToDelete.id} (${inmateToDelete.fullName})?`)) {
+      dispatch(deleteInmate(inmateToDelete.id));
+
+      const auditEntry = {
+        id: `LOG-${Math.floor(9000 + Math.random() * 999)}`,
+        timestamp: 'Just now',
+        user: `${currentUser?.username} (Admin)`,
+        action: 'Prisoner Record Permanently Expunged',
+        target: `Inmate ${inmateToDelete.fullName} (${inmateToDelete.id})`,
+        type: 'alert',
+        severity: 'rose',
+        details: `Record ${inmateToDelete.id} expunged from system DB by Admin.`
+      };
+
+      dispatch(addAuditLog(auditEntry));
+    }
+  };
+
   // Handler for posting a new incident log via Redux dispatch
   const handleIncidentSubmit = (newLog) => {
-    dispatch(addAuditLog(newLog));
+    const formattedLog = {
+      ...newLog,
+      user: `${currentUser?.username || 'Staff'} (${currentUser?.role || 'Officer'})`,
+    };
+    dispatch(addAuditLog(formattedLog));
   };
 
   // Open incident modal for a specific inmate
@@ -95,6 +127,7 @@ export default function App() {
             setIncidentInmateTarget(null);
             setIsIncidentModalOpen(true);
           }}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
           totalInmates={totalInmates}
           activeInCustody={activeInCustody}
           highAlertFlags={highAlertFlags}
@@ -110,6 +143,7 @@ export default function App() {
               inmates={searchedInmates}
               onSelectInmate={setSelectedInmate}
               onLogIncidentForInmate={handleOpenIncidentForInmate}
+              onDeleteInmate={handleDeleteInmate}
             />
           </section>
 
@@ -137,6 +171,7 @@ export default function App() {
           inmate={selectedInmate}
           onClose={() => setSelectedInmate(null)}
           onLogIncident={handleOpenIncidentForInmate}
+          onDeleteInmate={handleDeleteInmate}
         />
 
         <IncidentModal
@@ -146,8 +181,12 @@ export default function App() {
           selectedInmate={incidentInmateTarget}
         />
 
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+
       </div>
     </div>
   );
 }
-

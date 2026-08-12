@@ -1,10 +1,12 @@
 import React, { useContext } from 'react';
-import { X, Shield, FileText, AlertOctagon, HeartPulse } from 'lucide-react';
+import { X, Shield, FileText, AlertOctagon, HeartPulse, Trash2 } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import StatusBadge from './StatusBadge.jsx';
 import { AppContext } from '../context/AppContext.jsx';
 
 export default function InmateDetailDrawer({ inmate, onClose, onLogIncident }) {
   const { isDarkMode } = useContext(AppContext);
+  const currentUser = useSelector((state) => state.auth.user);
   if (!inmate) return null;
 
   return (
@@ -129,23 +131,37 @@ export default function InmateDetailDrawer({ inmate, onClose, onLogIncident }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
           <button
             onClick={() => {
               onClose();
               onLogIncident(inmate);
             }}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+            className="flex-1 min-w-[120px] flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold font-mono bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
           >
             <AlertOctagon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
             <span>Log Incident</span>
           </button>
 
+          {currentUser?.role === 'Admin' && (
+            <button
+              onClick={() => {
+                if (onDeleteInmate) onDeleteInmate(inmate);
+                onClose();
+              }}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold font-mono bg-rose-100 hover:bg-rose-200 dark:bg-rose-950/80 dark:hover:bg-rose-900 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
+              title="Expunge Inmate Record (Admin Permission Required)"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Expunge</span>
+            </button>
+          )}
+
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-xs font-mono text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
-            Close Dossier
+            Close
           </button>
         </div>
 

@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import inmatesReducer from './inmatesSlice.js';
 import auditLogsReducer from './auditLogsSlice.js';
+import authReducer from './authSlice.js';
 
 export const store = configureStore({
   reducer: {
     inmates: inmatesReducer,
     auditLogs: auditLogsReducer,
+    auth: authReducer,
   },
   devTools: true,
 });
