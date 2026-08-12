@@ -7,6 +7,7 @@ export const store = configureStore({
     inmates: inmatesReducer,
     auditLogs: auditLogsReducer,
   },
+  devTools: true,
 });
 
 // Subscribe to store updates to persist inmates and auditLogs to localStorage
