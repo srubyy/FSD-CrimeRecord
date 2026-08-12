@@ -1,155 +1,68 @@
-# CrimeNet OS // Backend REST API Server
+# CrimeNet OS // Secure Production REST API Backend
 
-Production-ready Express.js + Mongoose REST API for the CrimeNet OS Facility Control System.
+Enterprise-grade Express.js + Mongoose REST API for CrimeNet OS Facility Control System, hardened with multi-layer security controls.
 
 ---
 
-## 1. Quick Start & Setup
+## 1. Required Environment Variables
 
-### Environment Configuration
-Copy `.env.example` to create your local `.env` file:
-```bash
-cp server/.env.example server/.env
-```
-
-Ensure MongoDB is running locally or specify your MongoDB connection string in `.env`:
+Create `.env` based on `.env.example`:
 ```env
 PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/crimenet
+MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/crimenet?retryWrites=true&w=majority
+API_KEY=crimenet_secret_key_2026
+ALLOWED_ORIGINS=http://localhost:5173,https://fsd-crime-record.vercel.app
 ```
 
-### Seeding Initial Data
-Populate the MongoDB database with initial inmate records and audit logs:
-```bash
-node server/seed.js
-```
-
-### Running the API Server
-Start the Express server with live-reloading via `nodemon`:
-```bash
-npm run server:dev
-```
-
-Or run the production server:
-```bash
-npm run server
-```
+> **CRITICAL SECURITY REQUIREMENT**: `MONGO_URI` has **NO fallback credentials** anywhere in the codebase. The server will throw a critical error and refuse to start if `MONGO_URI` is missing from the environment.
 
 ---
 
-## 2. API Endpoints Reference
+## 2. Security Architecture & Layers
 
-### A. Inmates Endpoints (`/api/inmates`)
-
-| Method | Endpoint | Description | Query Parameters / Body |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/inmates` | Retrieve all inmate records | `?securityTier=Maximum` (optional)<br>`?search=Vance` (optional) |
-| `GET` | `/api/inmates/:id` | Fetch single inmate by business ID | `:id` (e.g., `CN-8092`) |
-| `POST` | `/api/inmates` | Register a new prisoner record | JSON body (Inmate Schema) |
-| `PUT` | `/api/inmates/:id` | Update an existing inmate record | JSON body of fields to update |
-| `DELETE` | `/api/inmates/:id` | Delete an inmate record | `:id` (e.g., `CN-8092`) |
-
-#### Example Request / Response
-
-**POST `/api/inmates` Request Body:**
-```json
-{
-  "id": "CN-8169",
-  "fullName": "Munna MBBS",
-  "alias": "Munna",
-  "age": 30,
-  "cellBlock": "Block Alpha-1",
-  "securityTier": "Maximum",
-  "crimeCategory": "Assault & Battery",
-  "medicalAlert": "None / Cleared",
-  "medicalAlertSeverity": "emerald",
-  "status": "Active",
-  "cellNumber": "A1-101",
-  "admissionDate": "2026-08-12",
-  "sentenceLength": "5 Years",
-  "paroleEligible": "2029",
-  "dangerRating": 9.1,
-  "notes": "DO NOT LEAVE ALONE UNCHAINED.",
-  "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
-}
-```
-
-**201 Created Response:**
-```json
-{
-  "_id": "66b9f2c1e4b0123456789abc",
-  "id": "CN-8169",
-  "fullName": "Munna MBBS",
-  "alias": "Munna",
-  "age": 30,
-  "cellBlock": "Block Alpha-1",
-  "securityTier": "Maximum",
-  "crimeCategory": "Assault & Battery",
-  "medicalAlert": "None / Cleared",
-  "medicalAlertSeverity": "emerald",
-  "status": "Active",
-  "cellNumber": "A1-101",
-  "admissionDate": "2026-08-12",
-  "sentenceLength": "5 Years",
-  "paroleEligible": "2029",
-  "dangerRating": 9.1,
-  "notes": "DO NOT LEAVE ALONE UNCHAINED.",
-  "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-  "createdAt": "2026-08-12T23:00:00.000Z",
-  "updatedAt": "2026-08-12T23:00:00.000Z"
-}
-```
+1. **Strict MONGO_URI Enforcement**: Eliminates hardcoded database credentials from source code; refuses execution if missing.
+2. **Helmet HTTP Headers**: Applies 15+ security header protections (XSS, Clickjacking, MIME sniffing, HSTS).
+3. **NoSQL Injection Defense**: Sanitizes all `req.body`, `req.query`, and `req.params` inputs via `express-mongo-sanitize` to strip Mongo operator keys (`$gt`, `$where`).
+4. **ReDoS & Pattern Injection Defense**: Escapes special regex characters in search query inputs before constructing `RegExp`.
+5. **Strict Input Validation**: Pre-validates payloads via `express-validator` schema middleware prior to database operations.
+6. **API Key Authentication**: Protects all write endpoints (`POST`, `PUT`, `DELETE`) via `x-api-key` request header validation.
+7. **Rate Limiting**: Enforces global API rate limiting (100 req/15 min) and write rate limiting (20 req/15 min) per IP address via `express-rate-limit`.
+8. **Payload Size Restrictions**: Configures `express.json({ limit: '10kb' })` to mitigate body payload denial-of-service abuse.
+9. **CORS Isolation**: Restricts cross-origin resource sharing strictly to domain origins listed in `ALLOWED_ORIGINS`.
+10. **Centralized Error Handling**: Logs full error stack server-side while masking internal stack traces from clients in production.
 
 ---
 
-### B. Audit Logs Endpoints (`/api/auditlogs`)
+## 3. Authenticated API Write Example
 
-> **Architectural Design Note**: `PUT` (update) and `DELETE` (destroy) endpoints are **intentionally omitted**. Security audit logs in high-security facilities are strictly append-only to preserve tamper-proof audit trails.
+Protected write endpoints (`POST`, `PUT`, `DELETE`) require the `x-api-key` request header.
 
-| Method | Endpoint | Description | Query Parameters / Body |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/auditlogs` | List security audit stream (newest first) | None |
-| `POST` | `/api/auditlogs` | Broadcast new audit log event | JSON body (Audit Log Schema) |
-
-#### Example Request / Response
-
-**POST `/api/auditlogs` Request Body:**
-```json
-{
-  "id": "LOG-9194",
-  "timestamp": "Just now",
-  "user": "Intake Officer (Terminal #01)",
-  "action": "New Prisoner Intake Registered",
-  "target": "Inmate Munna MBBS (CN-8169)",
-  "type": "intake",
-  "severity": "rose",
-  "details": "Assigned to Block Alpha-1. Security Tier: Maximum."
-}
+### Example cURL Request (`POST /api/inmates`):
+```bash
+curl -X POST http://localhost:5000/api/inmates \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: crimenet_secret_key_2026" \
+  -d '{
+    "id": "CN-9999",
+    "fullName": "Test Prisoner",
+    "securityTier": "Maximum",
+    "crimeCategory": "Cyber Heist"
+  }'
 ```
 
-**201 Created Response:**
-```json
-{
-  "_id": "66b9f2c1e4b0123456789def",
-  "id": "LOG-9194",
-  "timestamp": "Just now",
-  "user": "Intake Officer (Terminal #01)",
-  "action": "New Prisoner Intake Registered",
-  "target": "Inmate Munna MBBS (CN-8169)",
-  "type": "intake",
-  "severity": "rose",
-  "details": "Assigned to Block Alpha-1. Security Tier: Maximum.",
-  "createdAt": "2026-08-12T23:00:00.000Z",
-  "updatedAt": "2026-08-12T23:00:00.000Z"
-}
+### Example JavaScript `fetch`:
+```javascript
+const response = await fetch('https://fsd-crime-record.vercel.app/api/inmates', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-api-key': 'crimenet_secret_key_2026',
+  },
+  body: JSON.stringify({
+    id: 'CN-9999',
+    fullName: 'Test Prisoner',
+    securityTier: 'Maximum',
+  }),
+});
+const data = await response.json();
 ```
-
----
-
-## 3. Key Design Decisions
-
-1. **Business ID Lookups (`CN-8092` / `LOG-9081`) vs Mongo `_id`**:
-   Lookups, updates, and deletes operate on human-readable domain identifiers (`CN-8092`) rather than internal MongoDB ObjectIds (`_id`). This decouples API consumers from underlying database-specific primary key implementations.
-
-2. **Append-Only Audit Logs**:
-   Security audit logs represent immutable facility history. Omitting `PUT` and `DELETE` endpoints prevents audit record tampering and guarantees regulatory compliance.

@@ -1,10 +1,17 @@
 import express from 'express';
 import Inmate from '../models/Inmate.js';
+import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
+import { validateInmateCreate, validateInmateUpdate } from '../middleware/validators.js';
 
 const router = express.Router();
 
-// GET /api/inmates - Fetch all inmates with optional securityTier and search filter
-router.get('/', async (req, res) => {
+// Helper to escape special regex characters for ReDoS and pattern injection protection
+function escapeRegex(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+// GET /api/inmates - Fetch all inmates with optional securityTier and search filter (Public)
+router.get('/', async (req, res, next) => {
   try {
     const { securityTier, search } = req.query;
     const filter = {};
@@ -14,9 +21,10 @@ router.get('/', async (req, res) => {
       filter.securityTier = securityTier;
     }
 
-    // Filter by search string across fullName, id, crimeCategory, and cellBlock
-    if (search && search.trim() !== '') {
-      const searchRegex = new RegExp(search.trim(), 'i');
+    // Escape regex input before constructing RegExp to prevent ReDoS attacks
+    if (search && typeof search === 'string' && search.trim() !== '') {
+      const sanitizedSearch = escapeRegex(search.trim());
+      const searchRegex = new RegExp(sanitizedSearch, 'i');
       filter.$or = [
         { fullName: searchRegex },
         { id: searchRegex },
@@ -28,12 +36,12 @@ router.get('/', async (req, res) => {
     const inmates = await Inmate.find(filter).sort({ createdAt: -1 });
     res.status(200).json(inmates);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to retrieve inmate records', error: error.message });
+    next(error);
   }
 });
 
-// GET /api/inmates/:id - Fetch single inmate by business ID (e.g., CN-8092)
-router.get('/:id', async (req, res) => {
+// GET /api/inmates/:id - Fetch single inmate by business ID (e.g., CN-8092) (Public)
+router.get('/:id', async (req, res, next) => {
   try {
     const inmate = await Inmate.findOne({ id: req.params.id });
     if (!inmate) {
@@ -41,12 +49,12 @@ router.get('/:id', async (req, res) => {
     }
     res.status(200).json(inmate);
   } catch (error) {
-    res.status(500).json({ message: 'Error retrieving inmate record', error: error.message });
+    next(error);
   }
 });
 
-// POST /api/inmates - Intake new inmate record
-router.post('/', async (req, res) => {
+// POST /api/inmates - Intake new inmate record (Protected by API Key & Validation)
+router.post('/', apiKeyAuth, validateInmateCreate, async (req, res, next) => {
   try {
     const newInmate = new Inmate(req.body);
     const savedInmate = await newInmate.save();
@@ -55,12 +63,12 @@ router.post('/', async (req, res) => {
     if (error.code === 11000) {
       return res.status(400).json({ message: `Duplicate key error: Inmate ID ${req.body.id} already exists.` });
     }
-    res.status(400).json({ message: 'Validation error creating inmate record', error: error.message });
+    next(error);
   }
 });
 
-// PUT /api/inmates/:id - Update inmate record by business ID
-router.put('/:id', async (req, res) => {
+// PUT /api/inmates/:id - Update inmate record by business ID (Protected by API Key & Validation)
+router.put('/:id', apiKeyAuth, validateInmateUpdate, async (req, res, next) => {
   try {
     const updatedInmate = await Inmate.findOneAndUpdate(
       { id: req.params.id },
@@ -72,12 +80,12 @@ router.put('/:id', async (req, res) => {
     }
     res.status(200).json(updatedInmate);
   } catch (error) {
-    res.status(400).json({ message: 'Failed to update inmate record', error: error.message });
+    next(error);
   }
 });
 
-// DELETE /api/inmates/:id - Delete inmate record by business ID
-router.delete('/:id', async (req, res) => {
+// DELETE /api/inmates/:id - Delete inmate record by business ID (Protected by API Key)
+router.delete('/:id', apiKeyAuth, async (req, res, next) => {
   try {
     const deletedInmate = await Inmate.findOneAndDelete({ id: req.params.id });
     if (!deletedInmate) {
@@ -85,7 +93,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.status(200).json({ message: `Inmate record ${req.params.id} successfully deleted`, inmate: deletedInmate });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete inmate record', error: error.message });
+    next(error);
   }
 });
 
