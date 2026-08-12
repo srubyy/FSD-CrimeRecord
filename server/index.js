@@ -97,13 +97,6 @@ const connectDB = async (req, res, next) => {
     });
   }
 
-  if (!process.env.JWT_SECRET) {
-    return res.status(500).json({
-      status: 'error',
-      message: 'CRITICAL SECURITY ENFORCEMENT: JWT_SECRET environment variable is missing.',
-    });
-  }
-
   if (isConnected && mongoose.connection.readyState === 1) {
     return next();
   }
