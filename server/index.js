@@ -39,8 +39,15 @@ app.use(
 // 3. Request Body Size Limit (10kb max payload protection)
 app.use(express.json({ limit: '10kb' }));
 
-// 4. NoSQL Injection Protection (sanitize req.body, req.query, req.params)
-app.use(mongoSanitize());
+// 4. NoSQL Injection Protection (in-place sanitization of req.body, req.query, req.params)
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  if (req.query && typeof req.query === 'object') {
+    mongoSanitize.sanitize(req.query);
+  }
+  next();
+});
 
 // 5. Rate Limiting
 const generalLimiter = rateLimit({
