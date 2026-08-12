@@ -1,7 +1,7 @@
 /**
  * Centralized Express Error Handling Middleware
  * Catches all errors passed to next(err).
- * Logs server-side error trace and returns sanitized client responses.
+ * Logs server-side error trace and returns client error responses.
  */
 export const errorHandler = (err, req, res, next) => {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -12,9 +12,7 @@ export const errorHandler = (err, req, res, next) => {
 
   res.status(statusCode).json({
     status: 'error',
-    message: isProduction && statusCode === 500 
-      ? 'An internal server error occurred' 
-      : err.message || 'Internal Server Error',
+    message: err.message || 'Internal Server Error',
     ...(isProduction ? {} : { stack: err.stack }),
   });
 };
