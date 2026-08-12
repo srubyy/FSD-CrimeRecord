@@ -14,22 +14,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CRITICAL SECURITY ENFORCEMENT: No hardcoded MONGO_URI fallback allowed
-const MONGO_URI = process.env.MONGO_URI;
-
-if (!MONGO_URI) {
-  console.error('\n================================================================');
-  console.error('[CRITICAL SECURITY FAILURE] MONGO_URI environment variable is missing.');
-  console.error('Hardcoded database credentials have been completely removed.');
-  console.error('The server refuses to start without an explicit MONGO_URI environment variable.');
-  console.error('================================================================\n');
-  if (process.env.VERCEL) {
-    throw new Error('CRITICAL: MONGO_URI environment variable is not configured on Vercel.');
-  } else {
-    process.exit(1);
-  }
-}
-
 // 1. Security Headers via Helmet
 app.use(helmet());
 
@@ -42,7 +26,6 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl) or if origin is in allowedOrigins
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -60,7 +43,6 @@ app.use(express.json({ limit: '10kb' }));
 app.use(mongoSanitize());
 
 // 5. Rate Limiting
-// General API Rate Limiter (100 requests per 15 minutes per IP)
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -69,7 +51,6 @@ const generalLimiter = rateLimit({
   message: { status: 'fail', message: 'Too many requests from this IP. Please try again after 15 minutes.' },
 });
 
-// Stricter Write Rate Limiter for POST/PUT/DELETE (20 requests per 15 minutes per IP)
 const writeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -78,10 +59,8 @@ const writeLimiter = rateLimit({
   message: { status: 'fail', message: 'Write request threshold exceeded. Please wait 15 minutes before creating or modifying records.' },
 });
 
-// Apply general limiter to all /api routes
 app.use('/api', generalLimiter);
 
-// Apply write limiter to POST/PUT/DELETE methods under /api
 app.use('/api', (req, res, next) => {
   if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
     return writeLimiter(req, res, next);
@@ -89,12 +68,22 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// 6. Serverless DB Connection Middleware
+// 6. Serverless DB Connection Middleware (Enforces MONGO_URI presence without crashing function init)
 let isConnected = false;
 const connectDB = async (req, res, next) => {
+  const MONGO_URI = process.env.MONGO_URI;
+
+  if (!MONGO_URI) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'CRITICAL SECURITY ENFORCEMENT: MONGO_URI environment variable is missing. Hardcoded database credentials have been removed.',
+    });
+  }
+
   if (isConnected && mongoose.connection.readyState === 1) {
     return next();
   }
+
   try {
     const db = await mongoose.connect(MONGO_URI);
     isConnected = db.connections[0].readyState === 1;
@@ -120,11 +109,16 @@ app.use((req, res) => {
   res.status(404).json({ status: 'fail', message: `Route ${req.originalUrl} not found on CrimeNet API Server` });
 });
 
-// 7. Centralized Error Handling Middleware (must be registered last)
+// 7. Centralized Error Handling Middleware
 app.use(errorHandler);
 
 // Standalone listener for local dev server
 if (!process.env.VERCEL) {
+  const MONGO_URI = process.env.MONGO_URI;
+  if (!MONGO_URI) {
+    console.error('[CRITICAL SECURITY ERROR] MONGO_URI is missing from environment.');
+    process.exit(1);
+  }
   mongoose
     .connect(MONGO_URI)
     .then(() => {
