@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import TopNav from './components/TopNav.jsx';
 import InmateTable from './components/InmateTable.jsx';
 import AuditSidebar from './components/AuditSidebar.jsx';
 import IntakeModal from './components/IntakeModal.jsx';
 import InmateDetailDrawer from './components/InmateDetailDrawer.jsx';
 import IncidentModal from './components/IncidentModal.jsx';
-import { INITIAL_INMATES, INITIAL_AUDIT_LOGS } from './data/mockInmates.js';
 import { AppContext } from './context/AppContext.jsx';
-import usePersistedState from './hooks/usePersistedState.js';
+import { addInmate } from './store/inmatesSlice.js';
+import { addAuditLog } from './store/auditLogsSlice.js';
 
 export default function App() {
-  // Persisted state stored in localStorage via custom hook (useEffect + localStorage)
-  const [inmates, setInmates] = usePersistedState('crimenet_inmates', INITIAL_INMATES);
-  const [auditLogs, setAuditLogs] = usePersistedState('crimenet_audit_logs', INITIAL_AUDIT_LOGS);
+  const dispatch = useDispatch();
+
+  // Redux domain state
+  const inmates = useSelector(state => state.inmates);
+  const auditLogs = useSelector(state => state.auditLogs);
 
   // Consume global UI context (useContext)
   const { isDarkMode, searchTerm, securityFilter } = useContext(AppContext);
@@ -52,9 +55,9 @@ export default function App() {
     return matchesSearch && matchesSecurity;
   });
 
-  // Handler for adding a new inmate record
+  // Handler for adding a new inmate record via Redux dispatch
   const handleIntakeSubmit = (newRecord) => {
-    setInmates(prev => [newRecord, ...prev]);
+    dispatch(addInmate(newRecord));
 
     const auditEntry = {
       id: `LOG-${Math.floor(9000 + Math.random() * 999)}`,
@@ -67,12 +70,12 @@ export default function App() {
       details: `Assigned to ${newRecord.cellBlock}. Security Tier: ${newRecord.securityTier}.`
     };
 
-    setAuditLogs(prev => [auditEntry, ...prev]);
+    dispatch(addAuditLog(auditEntry));
   };
 
-  // Handler for posting a new incident log
+  // Handler for posting a new incident log via Redux dispatch
   const handleIncidentSubmit = (newLog) => {
-    setAuditLogs(prev => [newLog, ...prev]);
+    dispatch(addAuditLog(newLog));
   };
 
   // Open incident modal for a specific inmate
