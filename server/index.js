@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/crimenet';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://srutibaliga_db_user:Q7UBhYS2c9Lvc9IB@crime-rec.t4ygcwq.mongodb.net/crimenet?retryWrites=true&w=majority';
 
 // Enable CORS and JSON body parsing
 app.use(cors());
