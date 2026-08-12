@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Eye, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import StatusBadge from './StatusBadge.jsx';
+import { AppContext } from '../context/AppContext.jsx';
 
 export default function InmateTable({ 
   inmates, 
   onSelectInmate, 
-  onLogIncidentForInmate,
-  activeTab,
-  setActiveTab
+  onLogIncidentForInmate
 }) {
+  const { activeTab, setActiveTab } = useContext(AppContext);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 

@@ -1,21 +1,24 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Search, Plus, Filter, Bell, Shield, Sun, Moon } from 'lucide-react';
 import StatCard from './StatCard.jsx';
+import { AppContext } from '../context/AppContext.jsx';
 
 export default function TopNav({ 
-  searchTerm, 
-  setSearchTerm, 
-  securityFilter, 
-  setSecurityFilter, 
   onOpenIntakeModal,
   onOpenIncidentModal,
-  isDarkMode,
-  setIsDarkMode,
   totalInmates,
   activeInCustody,
   highAlertFlags,
   onDutyGuards
 }) {
+  const { 
+    isDarkMode, 
+    setIsDarkMode, 
+    searchTerm, 
+    setSearchTerm, 
+    securityFilter, 
+    setSecurityFilter 
+  } = useContext(AppContext);
   return (
     <header className="space-y-6">
       {/* Top Header & Search Bar */}

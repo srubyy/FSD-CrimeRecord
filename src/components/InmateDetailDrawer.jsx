@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { X, Shield, FileText, AlertOctagon, HeartPulse } from 'lucide-react';
 import StatusBadge from './StatusBadge.jsx';
+import { AppContext } from '../context/AppContext.jsx';
 
-export default function InmateDetailDrawer({ inmate, onClose, onLogIncident, isDarkMode }) {
+export default function InmateDetailDrawer({ inmate, onClose, onLogIncident }) {
+  const { isDarkMode } = useContext(AppContext);
   if (!inmate) return null;
 
   return (

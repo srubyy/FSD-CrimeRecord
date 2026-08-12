@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import TopNav from './components/TopNav.jsx';
 import InmateTable from './components/InmateTable.jsx';
 import AuditSidebar from './components/AuditSidebar.jsx';
@@ -6,26 +6,24 @@ import IntakeModal from './components/IntakeModal.jsx';
 import InmateDetailDrawer from './components/InmateDetailDrawer.jsx';
 import IncidentModal from './components/IncidentModal.jsx';
 import { INITIAL_INMATES, INITIAL_AUDIT_LOGS } from './data/mockInmates.js';
+import { AppContext } from './context/AppContext.jsx';
+import usePersistedState from './hooks/usePersistedState.js';
 
 export default function App() {
-  const [inmates, setInmates] = useState(INITIAL_INMATES);
-  const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
-  
-  // Theme state: dark mode default
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Persisted state stored in localStorage via custom hook (useEffect + localStorage)
+  const [inmates, setInmates] = usePersistedState('crimenet_inmates', INITIAL_INMATES);
+  const [auditLogs, setAuditLogs] = usePersistedState('crimenet_audit_logs', INITIAL_AUDIT_LOGS);
 
-  // Filtering & Tab state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [securityFilter, setSecurityFilter] = useState('ALL');
-  const [activeTab, setActiveTab] = useState('ALL');
+  // Consume global UI context (useContext)
+  const { isDarkMode, searchTerm, securityFilter } = useContext(AppContext);
 
-  // Modal & Drawer State
+  // Modal & Drawer State (Local to App.jsx)
   const [isIntakeOpen, setIsIntakeOpen] = useState(false);
   const [selectedInmate, setSelectedInmate] = useState(null);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [incidentInmateTarget, setIncidentInmateTarget] = useState(null);
 
-  // Sync dark class on html root element
+  // Sync dark class on html root element (useEffect)
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -89,17 +87,11 @@ export default function App() {
         
         {/* Top Header & Quiet Stat Row */}
         <TopNav
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          securityFilter={securityFilter}
-          setSecurityFilter={setSecurityFilter}
           onOpenIntakeModal={() => setIsIntakeOpen(true)}
           onOpenIncidentModal={() => {
             setIncidentInmateTarget(null);
             setIsIncidentModalOpen(true);
           }}
-          isDarkMode={isDarkMode}
-          setIsDarkMode={setIsDarkMode}
           totalInmates={totalInmates}
           activeInCustody={activeInCustody}
           highAlertFlags={highAlertFlags}
@@ -115,8 +107,6 @@ export default function App() {
               inmates={searchedInmates}
               onSelectInmate={setSelectedInmate}
               onLogIncidentForInmate={handleOpenIncidentForInmate}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
             />
           </section>
 
@@ -144,7 +134,6 @@ export default function App() {
           inmate={selectedInmate}
           onClose={() => setSelectedInmate(null)}
           onLogIncident={handleOpenIncidentForInmate}
-          isDarkMode={isDarkMode}
         />
 
         <IncidentModal
@@ -158,3 +147,4 @@ export default function App() {
     </div>
   );
 }
+
