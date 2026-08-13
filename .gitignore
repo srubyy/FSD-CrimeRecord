@@ -16,6 +16,10 @@ dist-isolation
 .env.*
 !.env.example
 
+# PDF & OS Metadata files
+*.pdf
+Icon?
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

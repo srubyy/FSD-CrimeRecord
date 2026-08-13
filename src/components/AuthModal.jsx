@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Shield, Lock, UserCheck, Key, UserPlus } from 'lucide-react';
+import { X, Shield, Lock, UserPlus } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/authSlice.js';
+import { API_BASE_URL } from '../config/api.js';
 
 export default function AuthModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
@@ -19,7 +20,7 @@ export default function AuthModal({ isOpen, onClose }) {
     setErrorMsg('');
     setIsLoading(true);
 
-    const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+    const endpoint = isLoginMode ? `${API_BASE_URL}/api/auth/login` : `${API_BASE_URL}/api/auth/register`;
     const payload = isLoginMode ? { username, password } : { username, password, role };
 
     try {
@@ -40,7 +41,7 @@ export default function AuthModal({ isOpen, onClose }) {
         onClose();
       } else {
         // Auto-login after registration
-        const loginRes = await fetch('/api/auth/login', {
+        const loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password }),
@@ -63,7 +64,7 @@ export default function AuthModal({ isOpen, onClose }) {
   // 1-Click Quick Demo Login for Lab Vivas & Testing
   const handleQuickDemoLogin = async (demoUsername, demoPassword, demoRole) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: demoUsername, password: demoPassword }),

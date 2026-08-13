@@ -1,0 +1,79 @@
+name: CrimeNet OS CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ----------------------------------------------------
+  # Job 1: CI Quality Gate (Lint -> Build -> In-Memory QA)
+  # ----------------------------------------------------
+  ci:
+    name: 🧪 CI Quality Gate (Oxlint + Build + In-Memory Postman QA)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔍 Run Oxlint Static Analysis
+        run: npx oxlint src
+
+      - name: 🏗️ Run Vite Production Build
+        run: npm run build
+
+      - name: 🧪 Execute Ephemeral In-Memory MongoDB Newman API Suite
+        run: node server/ci-test-runner.js
+
+  # ----------------------------------------------------
+  # Job 2: Automated Deployment (Vercel Frontend + Render Backend)
+  # Runs ONLY on 'main' branch AFTER CI Quality Gate passes 100%
+  # ----------------------------------------------------
+  deploy:
+    name: 🚀 Automated Production Deploy (Vercel + Render)
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: ⚡ Deploy Static Frontend to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            npx vercel deploy --prod --token=$VERCEL_TOKEN
+          else
+            echo "⚠️ VERCEL_TOKEN secret not set. Skipping Vercel CLI deployment step."
+          fi
+
+      - name: 🌐 Trigger Render Web Service Deployment Hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+            echo "✅ Successfully triggered Render backend deployment hook!"
+          else
+            echo "⚠️ RENDER_DEPLOY_HOOK_URL secret not set. Skipping Render hook trigger."
+          fi

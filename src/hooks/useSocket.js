@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
+import { API_BASE_URL } from '../config/api.js';
 
 export const useSocket = () => {
   const token = useSelector((state) => state.auth?.token);
@@ -18,12 +19,8 @@ export const useSocket = () => {
       return;
     }
 
-    // Determine target API server URL (Defaults to localhost:5000 in dev, or Vercel URL in prod)
-    const serverUrl =
-      import.meta.env.VITE_API_URL ||
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:5001'
-        : 'https://fsd-crime-record.vercel.app');
+    // Use centralized API_BASE_URL (Render backend in prod, localhost in dev)
+    const serverUrl = API_BASE_URL;
 
     // Create Socket instance with JWT handshake auth
     const socket = io(serverUrl, {
