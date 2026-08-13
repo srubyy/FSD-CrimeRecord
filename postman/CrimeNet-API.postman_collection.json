@@ -1,0 +1,1370 @@
+{
+	"info": {
+		"_postman_id": "crimenet-api-collection-2026",
+		"name": "CrimeNet-API",
+		"description": "Comprehensive Postman QA Test Suite for CrimeNet OS RESTful APIs (Auth, Inmates, Audit Logs). Validates status codes, JSON schemas, JWT authentication, and Role-Based Access Control (RBAC).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"description": "Authentication endpoints: staff registration, credential validation, JWT token issuance, and error handling.",
+			"item": [
+				{
+					"name": "POST /api/auth/login - Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response body contains valid token and Admin user', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"    pm.expect(jsonData.token).to.be.a('string').that.is.not.empty;",
+									"    pm.expect(jsonData.user.username).to.eql('admin_vance');",
+									"    pm.expect(jsonData.user.role).to.eql('Admin');",
+									"    pm.expect(jsonData.user).to.not.have.property('passwordHash');",
+									"    pm.environment.set('admin_token', jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin_vance\",\n  \"password\": \"AdminPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/login - Officer Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response body contains valid token and Officer user', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"    pm.expect(jsonData.token).to.be.a('string').that.is.not.empty;",
+									"    pm.expect(jsonData.user.username).to.eql('officer_blake');",
+									"    pm.expect(jsonData.user.role).to.eql('Officer');",
+									"    pm.expect(jsonData.user).to.not.have.property('passwordHash');",
+									"    pm.environment.set('officer_token', jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"officer_blake\",\n  \"password\": \"OfficerPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/login - Warden Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response body contains valid token and Warden user', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"    pm.expect(jsonData.token).to.be.a('string').that.is.not.empty;",
+									"    pm.expect(jsonData.user.username).to.eql('warden_k');",
+									"    pm.expect(jsonData.user.role).to.eql('Warden');",
+									"    pm.expect(jsonData.user).to.not.have.property('passwordHash');",
+									"    pm.environment.set('warden_token', jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"warden_k\",\n  \"password\": \"WardenPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/register - Valid Registration",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomId = Math.floor(1000 + Math.random() * 9000);",
+									"pm.variables.set('test_reg_username', 'officer_qa_' + randomId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response body contains created user without passwordHash', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"    pm.expect(jsonData.user).to.have.property('username');",
+									"    pm.expect(jsonData.user).to.not.have.property('passwordHash');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{test_reg_username}}\",\n  \"password\": \"TestPass123!\",\n  \"role\": \"Officer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/register - Duplicate Username",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error message indicates duplicate username', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.message).to.include('already registered');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin_vance\",\n  \"password\": \"AdminPass123!\",\n  \"role\": \"Admin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/register - Password Too Short (<6 chars)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Validation error returned for password length', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.errors[0].message).to.include('6 characters');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"short_pass_user\",\n  \"password\": \"123\",\n  \"role\": \"Officer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/register - Invalid Role Value",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Validation error returned for role enum', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.errors[0].message).to.include('Role must be one of');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"invalid_role_user\",\n  \"password\": \"Password123!\",\n  \"role\": \"SuperHero\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/login - Wrong Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error message indicates invalid credentials', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.message).to.include('Invalid username or password');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin_vance\",\n  \"password\": \"WrongPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/login - Nonexistent Username",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error message indicates invalid credentials', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.message).to.include('Invalid username or password');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"ghost_user_9999\",\n  \"password\": \"SomePassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Inmates",
+			"description": "Inmate record management endpoints: public queries, intake creation, updates, and role-restricted expungements.",
+			"item": [
+				{
+					"name": "GET /api/inmates - Public List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is a non-empty array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inmates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/inmates?securityTier=Maximum - Filter by Security Tier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Every record has securityTier === Maximum', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    jsonData.forEach(function (inmate) {",
+									"        pm.expect(inmate.securityTier).to.eql('Maximum');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inmates?securityTier=Maximum",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates"
+							],
+							"query": [
+								{
+									"key": "securityTier",
+									"value": "Maximum"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/inmates?search=Chen - Search by Substring",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Results match search query', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.above(0);",
+									"    jsonData.forEach(function (inmate) {",
+									"        const fullContent = (inmate.fullName + inmate.id + inmate.crimeCategory + inmate.cellBlock).toLowerCase();",
+									"        pm.expect(fullContent).to.include('chen');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inmates?search=Chen",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "Chen"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/inmates/:id - Valid ID (CN-8551)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response matches expected inmate schema', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql('CN-8551');",
+									"    pm.expect(jsonData).to.have.property('fullName');",
+									"    pm.expect(jsonData).to.have.property('securityTier');",
+									"    pm.expect(jsonData).to.have.property('cellBlock');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inmates/CN-8551",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates",
+								"CN-8551"
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/inmates/:id - Nonexistent ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404 Not Found', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error message indicates inmate not found', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/inmates/CN-999999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates",
+								"CN-999999"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/inmates - Unauthenticated (No Header)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error message indicates missing token', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('error');",
+									"    pm.expect(jsonData.message).to.include('Authorization header');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"CN-7777\",\n  \"fullName\": \"No Auth Inmate\",\n  \"securityTier\": \"Medium\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inmates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/inmates - Valid Officer Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Created record matches payload', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql('CN-7777');",
+									"    pm.expect(jsonData.fullName).to.eql('Postman Test Inmate');",
+									"    pm.expect(jsonData.securityTier).to.eql('Medium');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{officer_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"CN-7777\",\n  \"fullName\": \"Postman Test Inmate\",\n  \"securityTier\": \"Medium\",\n  \"crimeCategory\": \"Cyber Heist\",\n  \"age\": 30,\n  \"cellBlock\": \"Block Alpha-1\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inmates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/inmates - Missing Required Field (fullName)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Validation error returned for missing fullName', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.errors[0].field).to.eql('fullName');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{officer_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"CN-7778\",\n  \"securityTier\": \"Medium\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inmates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/inmates - Duplicate ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error message indicates duplicate key', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('already exists');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{officer_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"CN-7777\",\n  \"fullName\": \"Duplicate Test Inmate\",\n  \"securityTier\": \"Minimum\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inmates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates"
+							]
+						}
+					}
+				},
+				{
+					"name": "PUT /api/inmates/:id - Valid Officer Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Updated record reflects new notes value', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql('CN-7777');",
+									"    pm.expect(jsonData.notes).to.eql('Updated via Postman Automated QA Test suite.');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{officer_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"Updated via Postman Automated QA Test suite.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inmates/CN-7777",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates",
+								"CN-7777"
+							]
+						}
+					}
+				},
+				{
+					"name": "PUT /api/inmates/:id - Nonexistent ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404 Not Found', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error message indicates inmate not found', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{officer_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"Test Update\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inmates/CN-999999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates",
+								"CN-999999"
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/inmates/:id - Officer Token (403 Forbidden)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403 Forbidden', function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"pm.test('Error message indicates role restriction', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.message).to.include('Forbidden');",
+									"    pm.expect(jsonData.message).to.include('Admin');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{officer_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/inmates/CN-7777",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates",
+								"CN-7777"
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/inmates/:id - Admin Token (Valid Delete)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response confirms successful record deletion', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('successfully deleted');",
+									"    pm.expect(jsonData.inmate.id).to.eql('CN-7777');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/inmates/CN-7777",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates",
+								"CN-7777"
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/inmates/:id - Admin Token (Already Deleted ID)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404 Not Found', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error message indicates inmate not found', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/inmates/CN-7777",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inmates",
+								"CN-7777"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Audit Logs",
+			"description": "Security audit trail endpoints: public event feed, authenticated event logging, and route immutability checks.",
+			"item": [
+				{
+					"name": "GET /api/auditlogs - Public List (Newest First)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is array sorted descending by createdAt', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.above(0);",
+									"    if (jsonData.length >= 2) {",
+									"        const date0 = new Date(jsonData[0].createdAt);",
+									"        const date1 = new Date(jsonData[1].createdAt);",
+									"        pm.expect(date0.getTime()).to.be.at.least(date1.getTime());",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auditlogs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auditlogs"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auditlogs - Unauthenticated (401 Unauthorized)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error message indicates missing token', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('error');",
+									"    pm.expect(jsonData.message).to.include('Authorization header');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"LOG-9999\",\n  \"action\": \"Unauthenticated Audit Test\",\n  \"type\": \"intake\",\n  \"severity\": \"emerald\",\n  \"user\": \"Ghost User\",\n  \"details\": \"Test\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auditlogs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auditlogs"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auditlogs - Valid Warden Token",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const randomId = Math.floor(1000 + Math.random() * 9000);",
+									"pm.variables.set('test_audit_id', 'LOG-' + randomId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Created audit log matches payload', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(pm.variables.get('test_audit_id'));",
+									"    pm.expect(jsonData.action).to.eql('Automated Postman Audit Verification');",
+									"    pm.expect(jsonData.type).to.eql('security');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{warden_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{test_audit_id}}\",\n  \"action\": \"Automated Postman Audit Verification\",\n  \"target\": \"Facility Security Sweep\",\n  \"type\": \"security\",\n  \"severity\": \"emerald\",\n  \"user\": \"warden_k (Warden)\",\n  \"details\": \"Routine Postman QA verification run.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auditlogs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auditlogs"
+							]
+						}
+					}
+				},
+				{
+					"name": "POST /api/auditlogs - Invalid Type Enum Value",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Validation error returned for invalid type enum', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.errors[0].message).to.include('Type must be one of');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{warden_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"LOG-8889\",\n  \"action\": \"Invalid Type Audit Log\",\n  \"target\": \"Cell Block B\",\n  \"type\": \"invalid_enum_type\",\n  \"severity\": \"emerald\",\n  \"user\": \"warden_k (Warden)\",\n  \"details\": \"Test\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auditlogs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auditlogs"
+							]
+						}
+					}
+				},
+				{
+					"name": "PUT /api/auditlogs/:id - Nonexistent Route (404 Not Found)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404 Not Found (Audit logs are tamper-proof)', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Route not found message returned', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.message).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{warden_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"details\": \"Tampering attempt\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auditlogs/LOG-8888",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auditlogs",
+								"LOG-8888"
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/auditlogs/:id - Nonexistent Route (404 Not Found)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404 Not Found (Audit logs are append-only)', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Route not found message returned', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('fail');",
+									"    pm.expect(jsonData.message).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auditlogs/LOG-8888",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auditlogs",
+								"LOG-8888"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
