@@ -56,16 +56,13 @@ jobs:
           node-version: 20
 
       - name: ⚡ Deploy Static Frontend to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          if [ -n "$VERCEL_TOKEN" ]; then
-            npx vercel deploy --prod --token=$VERCEL_TOKEN --yes
-          else
-            echo "⚠️ VERCEL_TOKEN secret not set. Skipping Vercel CLI deployment step."
-          fi
+        uses: amondnet/vercel-action@v25
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
 
       - name: 🌐 Trigger Render Web Service Deployment Hook
         env:
