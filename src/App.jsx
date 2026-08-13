@@ -8,16 +8,17 @@ import InmateDetailDrawer from './components/InmateDetailDrawer.jsx';
 import IncidentModal from './components/IncidentModal.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import { AppContext } from './context/AppContext.jsx';
-import { addInmate, deleteInmate } from './store/inmatesSlice.js';
+import { addInmate, updateInmate, deleteInmate } from './store/inmatesSlice.js';
 import { addAuditLog } from './store/auditLogsSlice.js';
+import { useSocket } from './hooks/useSocket.js';
 
 export default function App() {
   const dispatch = useDispatch();
 
   // Redux domain state
-  const inmates = useSelector(state => state.inmates);
-  const auditLogs = useSelector(state => state.auditLogs);
-  const currentUser = useSelector(state => state.auth.user);
+  const inmates = useSelector((state) => state.inmates);
+  const auditLogs = useSelector((state) => state.auditLogs);
+  const currentUser = useSelector((state) => state.auth.user);
 
   // Consume global UI context (useContext)
   const { isDarkMode, searchTerm, securityFilter } = useContext(AppContext);
@@ -28,6 +29,59 @@ export default function App() {
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [incidentInmateTarget, setIncidentInmateTarget] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // WebSockets Real-Time Integration
+  const { socket, isConnected } = useSocket();
+  const [onlineStaff, setOnlineStaff] = useState([]);
+
+  // Socket event subscriptions for live multi-client broadcast
+  useEffect(() => {
+    if (!socket) return;
+
+    // Real-Time Inmate Created
+    const handleInmateCreated = (newInmate) => {
+      console.log('[CrimeNet Socket Event] inmate:created received:', newInmate);
+      dispatch(addInmate(newInmate));
+    };
+
+    // Real-Time Inmate Updated
+    const handleInmateUpdated = (updatedInmate) => {
+      console.log('[CrimeNet Socket Event] inmate:updated received:', updatedInmate);
+      dispatch(updateInmate(updatedInmate));
+    };
+
+    // Real-Time Inmate Deleted
+    const handleInmateDeleted = (inmateId) => {
+      console.log('[CrimeNet Socket Event] inmate:deleted received:', inmateId);
+      dispatch(deleteInmate(inmateId));
+    };
+
+    // Real-Time Audit Log Created
+    const handleAuditLogCreated = (newLog) => {
+      console.log('[CrimeNet Socket Event] auditlog:created received:', newLog);
+      dispatch(addAuditLog(newLog));
+    };
+
+    // Real-Time Presence List Updated
+    const handlePresenceUpdate = (staffList) => {
+      console.log('[CrimeNet Socket Event] presence:update received:', staffList);
+      setOnlineStaff(staffList);
+    };
+
+    socket.on('inmate:created', handleInmateCreated);
+    socket.on('inmate:updated', handleInmateUpdated);
+    socket.on('inmate:deleted', handleInmateDeleted);
+    socket.on('auditlog:created', handleAuditLogCreated);
+    socket.on('presence:update', handlePresenceUpdate);
+
+    return () => {
+      socket.off('inmate:created', handleInmateCreated);
+      socket.off('inmate:updated', handleInmateUpdated);
+      socket.off('inmate:deleted', handleInmateDeleted);
+      socket.off('auditlog:created', handleAuditLogCreated);
+      socket.off('presence:update', handlePresenceUpdate);
+    };
+  }, [socket, dispatch]);
 
   // Sync dark class on html root element (useEffect)
   useEffect(() => {
@@ -40,20 +94,19 @@ export default function App() {
 
   // Derived metrics
   const totalInmates = inmates.length;
-  const activeInCustody = inmates.filter(i => i.status === 'Active').length;
-  const highAlertFlags = inmates.filter(i => i.securityTier === 'Maximum' || i.securityTier === 'Isolation').length;
+  const activeInCustody = inmates.filter((i) => i.status === 'Active').length;
+  const highAlertFlags = inmates.filter((i) => i.securityTier === 'Maximum' || i.securityTier === 'Isolation').length;
   const onDutyGuards = 42;
 
   // Filtered inmates by search and dropdown
-  const searchedInmates = inmates.filter(inmate => {
-    const matchesSearch = 
+  const searchedInmates = inmates.filter((inmate) => {
+    const matchesSearch =
       inmate.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inmate.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inmate.crimeCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inmate.cellBlock.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesSecurity = 
-      securityFilter === 'ALL' || inmate.securityTier === securityFilter;
+    const matchesSecurity = securityFilter === 'ALL' || inmate.securityTier === securityFilter;
 
     return matchesSearch && matchesSecurity;
   });
@@ -70,7 +123,7 @@ export default function App() {
       target: `Inmate ${newRecord.fullName} (${newRecord.id})`,
       type: 'intake',
       severity: newRecord.securityTier === 'Maximum' ? 'rose' : 'emerald',
-      details: `Assigned to ${newRecord.cellBlock}. Security Tier: ${newRecord.securityTier}.`
+      details: `Assigned to ${newRecord.cellBlock}. Security Tier: ${newRecord.securityTier}.`,
     };
 
     dispatch(addAuditLog(auditEntry));
@@ -94,7 +147,7 @@ export default function App() {
         target: `Inmate ${inmateToDelete.fullName} (${inmateToDelete.id})`,
         type: 'alert',
         severity: 'rose',
-        details: `Record ${inmateToDelete.id} expunged from system DB by Admin.`
+        details: `Record ${inmateToDelete.id} expunged from system DB by Admin.`,
       };
 
       dispatch(addAuditLog(auditEntry));
@@ -119,7 +172,6 @@ export default function App() {
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
-        
         {/* Top Header & Quiet Stat Row */}
         <TopNav
           onOpenIntakeModal={() => setIsIntakeOpen(true)}
@@ -132,11 +184,12 @@ export default function App() {
           activeInCustody={activeInCustody}
           highAlertFlags={highAlertFlags}
           onDutyGuards={onDutyGuards}
+          onlineStaff={onlineStaff}
+          isSocketConnected={isConnected}
         />
 
         {/* Main Content Grid */}
         <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          
           {/* Main Content Area (Directory Table) */}
           <section className="lg:col-span-8">
             <InmateTable
@@ -157,7 +210,6 @@ export default function App() {
               }}
             />
           </section>
-
         </main>
 
         {/* Interactive Modals */}
@@ -185,7 +237,6 @@ export default function App() {
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}
         />
-
       </div>
     </div>
   );

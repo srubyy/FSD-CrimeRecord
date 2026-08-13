@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { Search, Plus, Filter, Bell, Shield, Sun, Moon, UserCheck, KeyRound } from 'lucide-react';
+import React, { useContext, useState } from 'react';
+import { Search, Plus, Filter, Bell, Shield, Sun, Moon, UserCheck, KeyRound, Wifi, Users } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import StatCard from './StatCard.jsx';
 import { AppContext } from '../context/AppContext.jsx';
@@ -11,7 +11,9 @@ export default function TopNav({
   totalInmates,
   activeInCustody,
   highAlertFlags,
-  onDutyGuards
+  onDutyGuards,
+  onlineStaff = [],
+  isSocketConnected = false
 }) {
   const { 
     isDarkMode, 
@@ -21,6 +23,8 @@ export default function TopNav({
     securityFilter, 
     setSecurityFilter 
   } = useContext(AppContext);
+
+  const [showPresenceDropdown, setShowPresenceDropdown] = useState(false);
 
   const currentUser = useSelector((state) => state.auth.user);
   const role = currentUser?.role || 'Officer';
@@ -45,11 +49,13 @@ export default function TopNav({
             <h1 className="text-base font-bold text-slate-900 dark:text-slate-100 font-sans tracking-tight">
               CrimeNet OS <span className="text-slate-400 dark:text-slate-500 font-normal">// Facility Control</span>
             </h1>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                 MAX-SEC-09
               </span>
               <span className="text-slate-400 dark:text-slate-600">•</span>
+              
+              {/* Auth User Badge */}
               <button
                 onClick={onOpenAuthModal}
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-semibold border cursor-pointer ${roleStyle}`}
@@ -58,6 +64,53 @@ export default function TopNav({
                 <UserCheck className="w-3 h-3" />
                 <span>{currentUser?.username || 'Guest'} ({role})</span>
               </button>
+
+              <span className="text-slate-400 dark:text-slate-600">•</span>
+
+              {/* Real-Time Socket Presence Indicator */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowPresenceDropdown(!showPresenceDropdown)}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 cursor-pointer"
+                  title="Real-Time Staff Presence (WebSockets Active)"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <Wifi className="w-3 h-3 text-emerald-500" />
+                  <span>{onlineStaff.length > 0 ? `${onlineStaff.length} Staff Online` : 'Socket Ready'}</span>
+                </button>
+
+                {/* Dropdown displaying online staff */}
+                {showPresenceDropdown && (
+                  <div className="absolute left-0 mt-2 w-56 rounded-lg bg-slate-900 text-slate-100 border border-slate-800 shadow-xl z-50 p-3 text-xs font-sans">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 font-mono font-bold text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-emerald-400" /> Online Staff
+                      </span>
+                      <span className="text-[10px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800">
+                        WebSockets
+                      </span>
+                    </div>
+
+                    {onlineStaff.length === 0 ? (
+                      <p className="text-slate-500 italic py-1">No active staff connected to socket.</p>
+                    ) : (
+                      <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                        {onlineStaff.map((staff, idx) => (
+                          <li key={idx} className="flex items-center justify-between py-1 px-1.5 rounded hover:bg-slate-800/60 font-mono">
+                            <span className="font-medium text-slate-200">{staff.username}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                              {staff.role}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import AuditLog from '../models/AuditLog.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { requireRole } from '../middleware/roleMiddleware.js';
 import { validateAuditLogCreate } from '../middleware/validators.js';
+import { getIO } from '../socket.js';
 
 const router = express.Router();
 
@@ -32,6 +33,10 @@ router.post(
     try {
       const newLog = new AuditLog(req.body);
       const savedLog = await newLog.save();
+
+      // Real-Time Socket Broadcast
+      getIO().emit('auditlog:created', savedLog);
+
       res.status(201).json(savedLog);
     } catch (error) {
       if (error.code === 11000) {

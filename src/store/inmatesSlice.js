@@ -19,7 +19,17 @@ export const inmatesSlice = createSlice({
   initialState: loadInitialInmates(),
   reducers: {
     addInmate: (state, action) => {
-      state.unshift(action.payload);
+      // Check if inmate already exists to prevent duplicate insertion
+      const exists = state.some((i) => i.id === action.payload.id);
+      if (!exists) {
+        state.unshift(action.payload);
+      }
+    },
+    updateInmate: (state, action) => {
+      const index = state.findIndex((i) => i.id === action.payload.id);
+      if (index !== -1) {
+        state[index] = { ...state[index], ...action.payload };
+      }
     },
     deleteInmate: (state, action) => {
       return state.filter((inmate) => inmate.id !== action.payload);
@@ -27,5 +37,5 @@ export const inmatesSlice = createSlice({
   },
 });
 
-export const { addInmate, deleteInmate } = inmatesSlice.actions;
+export const { addInmate, updateInmate, deleteInmate } = inmatesSlice.actions;
 export default inmatesSlice.reducer;

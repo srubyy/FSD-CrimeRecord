@@ -3,6 +3,7 @@ import Inmate from '../models/Inmate.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { requireRole } from '../middleware/roleMiddleware.js';
 import { validateInmateCreate, validateInmateUpdate } from '../middleware/validators.js';
+import { getIO } from '../socket.js';
 
 const router = express.Router();
 
@@ -62,6 +63,10 @@ router.post(
     try {
       const newInmate = new Inmate(req.body);
       const savedInmate = await newInmate.save();
+
+      // Real-Time Socket Broadcast
+      getIO().emit('inmate:created', savedInmate);
+
       res.status(201).json(savedInmate);
     } catch (error) {
       if (error.code === 11000) {
@@ -88,6 +93,10 @@ router.put(
       if (!updatedInmate) {
         return res.status(404).json({ message: `Inmate with ID ${req.params.id} not found` });
       }
+
+      // Real-Time Socket Broadcast
+      getIO().emit('inmate:updated', updatedInmate);
+
       res.status(200).json(updatedInmate);
     } catch (error) {
       next(error);
@@ -106,6 +115,10 @@ router.delete(
       if (!deletedInmate) {
         return res.status(404).json({ message: `Inmate with ID ${req.params.id} not found` });
       }
+
+      // Real-Time Socket Broadcast
+      getIO().emit('inmate:deleted', req.params.id);
+
       res.status(200).json({ message: `Inmate record ${req.params.id} successfully deleted`, inmate: deletedInmate });
     } catch (error) {
       next(error);
