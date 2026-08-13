@@ -61,7 +61,23 @@ export default function AuthModal({ isOpen, onClose }) {
   };
 
   // 1-Click Quick Demo Login for Lab Vivas & Testing
-  const handleQuickDemoLogin = (demoUsername, demoPassword, demoRole) => {
+  const handleQuickDemoLogin = async (demoUsername, demoPassword, demoRole) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: demoUsername, password: demoPassword }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        dispatch(setCredentials({ user: data.user, token: data.token }));
+        onClose();
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend login fallback used for quick demo');
+    }
+
     dispatch(
       setCredentials({
         user: { username: demoUsername, role: demoRole },
