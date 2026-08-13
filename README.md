@@ -1,12 +1,42 @@
 # CrimeNet OS // Facility Control Management System
 
-A high-security, full-stack prison management application featuring a modern React frontend, Express/Mongoose REST API, JWT Role-Based Access Control (RBAC), real-time WebSockets communication, and automated CI/CD deployment pipelines.
+A high-security, full-stack prison management application featuring a modern React frontend, Express/Mongoose REST API, JWT Role-Based Access Control (RBAC), real-time WebSockets communication, automated CI/CD pipelines, and multi-container Docker orchestration.
 
 ---
 
-## 🏗️ Deployment Architecture
+## 🐳 Run with Docker (Self-Contained Local Environment)
 
-The application uses a decoupled micro-architecture separating the static Single Page Application (SPA) frontend from the persistent backend Web Service:
+You can spin up the complete full-stack environment locally using **Docker Compose** without needing external dependencies, local Node.js installations, or cloud database connections (runs fully offline from MongoDB Atlas).
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine + Docker Compose installed.
+
+### Step-by-Step Launch Sequence
+
+```bash
+# 1. Clone or navigate to the repository directory
+cd /path/to/FSD
+
+# 2. Create local Docker environment file from template
+cp .env.docker.example .env.docker
+
+# 3. Build and launch all 3 micro-services (MongoDB + API Server + Nginx Web)
+docker-compose up --build
+```
+
+### Containerized Port Mappings & Endpoint Access
+
+| Container Service | Docker Image / Source | Exposed Port | Purpose |
+| :--- | :--- | :--- | :--- |
+| **`crimenet-web`** | `Dockerfile.frontend` (Nginx:alpine) | `http://localhost:8080` | React Single Page Application frontend |
+| **`crimenet-api`** | `server/Dockerfile` (Node:20-alpine) | `http://localhost:5001` | Express REST API & Socket.IO WebSockets |
+| **`crimenet-mongo`** | `mongo:7` | `localhost:27017` | Isolated local MongoDB database container |
+
+---
+
+## 🏗️ Deployment Architecture (Vercel & Render)
+
+The production application is decoupled into a static SPA frontend on Vercel and a persistent Web Service backend on Render:
 
 ```text
   ┌───────────────────────────────┐
@@ -27,69 +57,40 @@ The application uses a decoupled micro-architecture separating the static Single
   └───────────────────────────────┘
 ```
 
-1. **Frontend (Vercel)**: Deployed as a static React SPA on Vercel's global CDN. Routes all backend requests dynamically to the Render backend via `VITE_API_URL`.
-2. **Backend (Render Web Service)**: Deployed as a persistent long-lived Node.js Web Service on Render (`crimenet-api`). Enables full **Socket.IO WebSockets** support for real-time multi-client state broadcasting and presence tracking.
-3. **Database (MongoDB Atlas)**: Cloud-hosted MongoDB database storing encrypted user credentials, inmate records, and tamper-proof security audit feeds.
-
 ---
 
 ## 🧪 CI/CD Quality Gate Pipeline (`.github/workflows/ci-cd.yml`)
 
-Every code push or pull request triggers an automated GitHub Actions CI pipeline:
+Every code push to `main` triggers an automated 3-stage GitHub Actions pipeline:
 
 ```text
-[Push / PR] ──► [1. Oxlint Static Analysis] ──► [2. Vite Build Check] ──► [3. In-Memory MongoDB Newman QA] ──► [4. Deploy to Vercel & Render]
+[Push / PR] ──► [1. Oxlint + Build + In-Memory QA] ──► [2. Deploy Vercel & Render] ──► [3. Build & Push Docker Images to GHCR]
 ```
 
-> [!IMPORTANT]
-> **Ephemeral In-Memory Database Isolation**: The CI quality gate executes the complete **Postman Newman Automated API Test Suite (29 requests, 58 assertions)** against an isolated, ephemeral in-memory MongoDB server (`mongodb-memory-server`). The production MongoDB Atlas database is **never touched or polluted** during automated CI test runs.
+1. **Job 1 (CI Gate)**: Runs `Oxlint`, Vite build compilation, and executes the complete Postman Newman QA test suite (29 requests, 58 assertions) against an isolated, ephemeral in-memory database (`mongodb-memory-server`).
+2. **Job 2 (Deploy)**: Deploys static SPA frontend to Vercel and triggers Render Web Service deploy hook.
+3. **Job 3 (Docker GHCR)**: Builds production multi-stage Docker images (`crimenet-api` and `crimenet-web`) and pushes them to GitHub Container Registry (`ghcr.io`).
 
 ---
 
 ## 🔑 Required Configuration & Environment Variables
 
-### **1. GitHub Repository Secrets** (Set in GitHub $\rightarrow$ Settings $\rightarrow$ Secrets and variables $\rightarrow$ Actions)
+### **1. GitHub Repository Secrets** (`Settings` $\rightarrow$ `Secrets and variables` $\rightarrow$ `Actions`)
 
-| Secret Name | Description | Where to Obtain |
-| :--- | :--- | :--- |
-| `VERCEL_TOKEN` | Vercel Personal Access Token | Vercel Dashboard $\rightarrow$ Account Settings $\rightarrow$ Tokens |
-| `VERCEL_ORG_ID` | Vercel Team / Account ID | Found in local `.vercel/project.json` or Vercel project settings |
-| `VERCEL_PROJECT_ID` | Vercel Project ID | Found in local `.vercel/project.json` or Vercel project settings |
-| `RENDER_DEPLOY_HOOK_URL` | Render Deploy Hook URL | Render Dashboard $\rightarrow$ `crimenet-api` Service $\rightarrow$ Settings $\rightarrow$ Deploy Hook |
-
----
-
-### **2. Render Dashboard Environment Variables** (Set in Render Dashboard $\rightarrow$ `crimenet-api` $\rightarrow$ Environment)
-
-| Variable Name | Example / Description |
+| Secret Name | Description |
 | :--- | :--- |
-| `MONGO_URI` | `mongodb+srv://<user>:<password>@cluster.mongodb.net/crimenet?retryWrites=true&w=majority` |
-| `JWT_SECRET` | Strong random secret string used for signing 24h JWT auth tokens |
-| `ALLOWED_ORIGINS` | `https://fsd-crime-record.vercel.app,http://localhost:5173` |
-| `PORT` | `10000` (Render default port) |
+| `VERCEL_TOKEN` | Vercel Personal Access Token |
+| `VERCEL_ORG_ID` | Vercel Organization / Team ID |
+| `VERCEL_PROJECT_ID` | Vercel Project ID |
+| `RENDER_DEPLOY_HOOK_URL` | Render Deploy Hook URL |
 
 ---
 
-### **3. Vercel Project Environment Variable** (Set in Vercel Dashboard $\rightarrow$ Settings $\rightarrow$ Environment Variables)
+### **2. Render Dashboard Environment Variables** (`crimenet-api` $\rightarrow$ `Environment`)
 
-| Variable Name | Value | Description |
-| :--- | :--- | :--- |
-| `VITE_API_URL` | `https://crimenet-api.onrender.com` | Points frontend API requests to the Render backend URL |
-
----
-
-## 🛠️ Local Development Setup
-
-```bash
-# Install dependencies
-npm install
-
-# Start local backend API & Socket server (port 5001)
-npm run server
-
-# Start local React frontend (port 5173)
-npm run dev
-
-# Run automated in-memory MongoDB QA test suite
-node server/ci-test-runner.js
-```
+| Variable Name | Value |
+| :--- | :--- |
+| `MONGO_URI` | MongoDB Atlas Connection String |
+| `JWT_SECRET` | Secret string for signing 24h JWT auth tokens (Fail-fast enforced: server exits if missing) |
+| `ALLOWED_ORIGINS` | `https://fsd-crime-record.vercel.app,http://localhost:5173,http://localhost:8080` |
+| `PORT` | `10000` |

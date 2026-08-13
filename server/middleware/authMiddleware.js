@@ -16,7 +16,13 @@ export const verifyToken = (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
-  const JWT_SECRET = process.env.JWT_SECRET || 'crimenet_super_secret_jwt_key_2026';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'CRITICAL SECURITY ENFORCEMENT: JWT_SECRET environment variable is missing.',
+    });
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);

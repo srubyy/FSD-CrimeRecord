@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------
+  # 1. Local Database Container (MongoDB 7)
+  # ----------------------------------------------------
+  mongo:
+    image: mongo:7
+    container_name: crimenet-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
+  # ----------------------------------------------------
+  # 2. Node.js Backend API & WebSockets Service
+  # ----------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: crimenet-api
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file:
+      - .env.docker
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/crimenet
+    ports:
+      - '5001:5001'
+
+  # ----------------------------------------------------
+  # 3. React Frontend Nginx Web Server
+  # ----------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: http://localhost:5001
+    container_name: crimenet-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '8080:80'
+
+# Persistent Volume for Mongo Database Storage
+volumes:
+  mongo_data:

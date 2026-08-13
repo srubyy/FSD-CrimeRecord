@@ -41,7 +41,10 @@ export const initSocket = (httpServer) => {
       return next(new Error('Authentication error: Missing JWT token in socket handshake.'));
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'crimenet_super_secret_jwt_key_2026';
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      return next(new Error('Authentication error: Missing JWT_SECRET environment configuration.'));
+    }
 
     try {
       let decoded;

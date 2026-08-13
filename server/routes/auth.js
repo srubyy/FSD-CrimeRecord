@@ -78,7 +78,13 @@ router.post(
   async (req, res, next) => {
     try {
       const { username, password } = req.body;
-      const JWT_SECRET = process.env.JWT_SECRET || 'crimenet_super_secret_jwt_key_2026';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) {
+        return res.status(500).json({
+          status: 'error',
+          message: 'CRITICAL SECURITY ENFORCEMENT: JWT_SECRET environment variable is missing.',
+        });
+      }
 
       const user = await User.findOne({ username: username.toLowerCase().trim() });
       if (!user) {

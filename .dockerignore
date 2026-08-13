@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-isolation
+.git
+.gitignore
+.env
+.env.*
+!.env.docker.example
+postman
+.github
+*.md
+EXPERIMENT_1.md
+DBMS Lab Manual Odd Sem 25-26.pdf

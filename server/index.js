@@ -18,9 +18,10 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // MANDATORY SECURITY CHECK: JWT_SECRET environment variable check
-const JWT_SECRET = process.env.JWT_SECRET || 'crimenet_super_secret_jwt_key_2026';
-if (!process.env.JWT_SECRET) {
-  console.log('[Security Notice] JWT_SECRET not found in env, using secured default secret.');
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[CRITICAL SECURITY ERROR] JWT_SECRET environment variable is missing.');
+  process.exit(1);
 }
 
 // 1. Security Headers via Helmet
