@@ -70,7 +70,7 @@ const generalLimiter = rateLimit({
 
 const writeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: 'fail', message: 'Write request threshold exceeded. Please wait 15 minutes before creating or modifying records.' },
