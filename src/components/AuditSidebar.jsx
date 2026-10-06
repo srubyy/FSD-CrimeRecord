@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, Plus, Clock } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export default function AuditSidebar({ logs, onOpenIncidentModal }) {
   const [filterSeverity, setFilterSeverity] = useState('ALL');
@@ -9,96 +9,91 @@ export default function AuditSidebar({ logs, onOpenIncidentModal }) {
     return log.severity === filterSeverity;
   });
 
-  const getSeverityBadge = (severity) => {
+  const getDotColor = (severity) => {
     switch (severity) {
       case 'rose':
-        return <span className="w-2 h-2 rounded-full bg-rose-500"></span>;
+        return 'bg-[#B4232C] dark:bg-[#E06A70]';
       case 'amber':
-        return <span className="w-2 h-2 rounded-full bg-amber-500"></span>;
+        return 'bg-[#A66A00] dark:bg-[#D6A34A]';
       case 'emerald':
       default:
-        return <span className="w-2 h-2 rounded-full bg-emerald-500"></span>;
+        return 'bg-[#526176] dark:bg-[#AAB6C5]';
     }
   };
 
   return (
-    <aside className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between h-[540px] shadow-sm">
-      {/* Header & Live Status */}
-      <div className="space-y-3 pb-3 border-b border-slate-200 dark:border-slate-800/80">
+    <aside className="bg-white dark:bg-[#151C26] border border-[#D9E0E8] dark:border-[#293544] rounded-lg p-3.5 flex flex-col justify-between shadow-xs min-h-[580px]">
+      {/* Header & Filter Controls */}
+      <div className="space-y-3 pb-3 border-b border-[#D9E0E8] dark:border-[#293544]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 font-sans tracking-tight">
-              Facility audit feed
-            </h2>
-          </div>
+          <h2 className="text-sm font-semibold text-[#172033] dark:text-[#F1F4F8]">
+            Audit Feed
+          </h2>
 
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            LIVE
+          <span className="flex items-center gap-1.5 text-xs text-[#526176] dark:text-[#AAB6C5]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#167A5B] dark:bg-[#4DB58B] animate-pulse" />
+            Live
           </span>
         </div>
 
-        {/* Severity Filter Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-sans">
+        {/* Minimalist Filter Tabs */}
+        <div className="flex items-center gap-1 text-xs">
           {[
             { id: 'ALL', label: 'All' },
             { id: 'rose', label: 'Critical' },
             { id: 'amber', label: 'Warning' },
             { id: 'emerald', label: 'System' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setFilterSeverity(tab.id)}
-              className={`flex-1 py-0.5 rounded text-center text-xs font-medium transition-colors cursor-pointer ${
-                filterSeverity === tab.id
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              {tab.label}
-            </button>
+          ].map((tab, idx) => (
+            <React.Fragment key={tab.id}>
+              {idx > 0 && <span className="text-[#D9E0E8] dark:text-[#293544]">|</span>}
+              <button
+                onClick={() => setFilterSeverity(tab.id)}
+                className={`px-1.5 py-0.5 rounded text-xs transition-colors cursor-pointer ${
+                  filterSeverity === tab.id
+                    ? 'font-semibold text-[#24527A] dark:text-[#6B9BC2]'
+                    : 'text-[#526176] dark:text-[#AAB6C5] hover:text-[#172033] dark:hover:text-[#F1F4F8]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            </React.Fragment>
           ))}
         </div>
       </div>
 
-      {/* Log Stream Items */}
-      <div className="flex-1 my-3 overflow-y-auto space-y-2.5 pr-1">
+      {/* Event Stream List (Separated by subtle dividers, not giant cards) */}
+      <div className="flex-1 my-2 overflow-y-auto divide-y divide-[#D9E0E8] dark:divide-[#293544] pr-1 max-h-[420px]">
         {filteredLogs.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-sans text-xs">
-            No audit logs found.
+          <div className="text-center py-16 text-[#526176] dark:text-[#AAB6C5] text-xs">
+            No audit records for this filter.
           </div>
         ) : (
           filteredLogs.map((log) => (
-            <div 
-              key={log.id} 
-              className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 space-y-1.5 group"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {getSeverityBadge(log.severity)}
-                  <span className="font-sans text-xs font-semibold text-slate-900 dark:text-slate-100">
+            <div key={log.id} className="py-2.5 first:pt-1 last:pb-1 space-y-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getDotColor(log.severity)}`} />
+                  <span className="text-xs font-medium text-[#172033] dark:text-[#F1F4F8] truncate">
                     {log.action}
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-400 font-mono">
-                  <Clock className="w-3 h-3" />
-                  <span>{log.timestamp}</span>
-                </div>
+                <span className="text-[11px] text-[#526176] dark:text-[#AAB6C5] font-mono shrink-0">
+                  {log.timestamp}
+                </span>
               </div>
 
-              <p className="text-xs text-slate-700 dark:text-slate-300 font-sans">
+              <p className="text-[11px] text-[#526176] dark:text-[#AAB6C5] font-mono pl-3 truncate">
                 {log.target}
               </p>
 
-              <div className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900/80 p-2 rounded border border-slate-200 dark:border-slate-800/60 leading-relaxed font-sans">
+              <div className="text-xs text-[#526176] dark:text-[#AAB6C5] pl-3 leading-relaxed">
                 {log.details}
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-0.5">
+              <div className="flex items-center justify-between text-[10px] text-[#526176] dark:text-[#AAB6C5] font-mono pl-3 pt-0.5 opacity-75">
                 <span>By: {log.user}</span>
-                <span>ID: {log.id}</span>
+                <span>{log.id}</span>
               </div>
             </div>
           ))
@@ -106,13 +101,13 @@ export default function AuditSidebar({ logs, onOpenIncidentModal }) {
       </div>
 
       {/* Footer CTA */}
-      <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+      <div className="pt-2.5 border-t border-[#D9E0E8] dark:border-[#293544]">
         <button
           onClick={onOpenIncidentModal}
-          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold font-sans bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#F5F7FA] hover:bg-[#EAEFF5] dark:bg-[#0F141C] dark:hover:bg-[#151C26] text-[#172033] dark:text-[#F1F4F8] border border-[#D9E0E8] dark:border-[#293544] transition-colors cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Post Manual Incident Log</span>
+          <span>Post Manual Incident</span>
         </button>
       </div>
     </aside>

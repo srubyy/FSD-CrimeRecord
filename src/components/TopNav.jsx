@@ -1,7 +1,16 @@
-import React, { useContext, useState } from 'react';
-import { Search, Plus, Filter, Bell, Shield, Sun, Moon, UserCheck, KeyRound, Wifi, Users } from 'lucide-react';
+import React, { useContext, useState, useEffect } from 'react';
+import { 
+  Search, 
+  Plus, 
+  Bell, 
+  Shield, 
+  Sun, 
+  Moon, 
+  X,
+  Command,
+  ChevronDown
+} from 'lucide-react';
 import { useSelector } from 'react-redux';
-import StatCard from './StatCard.jsx';
 import { AppContext } from '../context/AppContext.jsx';
 
 export default function TopNav({ 
@@ -25,197 +34,234 @@ export default function TopNav({
   } = useContext(AppContext);
 
   const [showPresenceDropdown, setShowPresenceDropdown] = useState(false);
+  const [systemTime, setSystemTime] = useState(new Date().toUTCString().slice(17, 25) + ' UTC');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setSystemTime(now.toUTCString().slice(17, 25) + ' UTC');
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const currentUser = useSelector((state) => state.auth.user);
   const role = currentUser?.role || 'Officer';
 
-  const roleStyle = 
-    role === 'Admin'
-      ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800'
-      : role === 'Warden'
-      ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800'
-      : 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/80 dark:text-sky-300 dark:border-sky-800';
-
   return (
-    <header className="space-y-6">
-      {/* Top Header & Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Brand & Auth Status */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-300">
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100 font-sans tracking-tight">
-              CrimeNet OS <span className="text-slate-400 dark:text-slate-500 font-normal">// Facility Control</span>
-            </h1>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                MAX-SEC-09
-              </span>
-              <span className="text-slate-400 dark:text-slate-600">•</span>
-              
-              {/* Auth User Badge */}
-              <button
-                onClick={onOpenAuthModal}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-semibold border cursor-pointer ${roleStyle}`}
-                title="Click to Switch User or Register Account"
-              >
-                <UserCheck className="w-3 h-3" />
-                <span>{currentUser?.username || 'Guest'} ({role})</span>
-              </button>
-
-              <span className="text-slate-400 dark:text-slate-600">•</span>
-
-              {/* Real-Time Socket Presence Indicator */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowPresenceDropdown(!showPresenceDropdown)}
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 cursor-pointer"
-                  title="Real-Time Staff Presence (WebSockets Active)"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <Wifi className="w-3 h-3 text-emerald-500" />
-                  <span>{onlineStaff.length > 0 ? `${onlineStaff.length} Staff Online` : 'Socket Ready'}</span>
-                </button>
-
-                {/* Dropdown displaying online staff */}
-                {showPresenceDropdown && (
-                  <div className="absolute left-0 mt-2 w-56 rounded-lg bg-slate-900 text-slate-100 border border-slate-800 shadow-xl z-50 p-3 text-xs font-sans">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2 font-mono font-bold text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-emerald-400" /> Online Staff
-                      </span>
-                      <span className="text-[10px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800">
-                        WebSockets
-                      </span>
-                    </div>
-
-                    {onlineStaff.length === 0 ? (
-                      <p className="text-slate-500 italic py-1">No active staff connected to socket.</p>
-                    ) : (
-                      <ul className="space-y-1.5 max-h-40 overflow-y-auto">
-                        {onlineStaff.map((staff, idx) => (
-                          <li key={idx} className="flex items-center justify-between py-1 px-1.5 rounded hover:bg-slate-800/60 font-mono">
-                            <span className="font-medium text-slate-200">{staff.username}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                              {staff.role}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
+    <div>
+      {/* 1. Restrained Global Header (~64px) - Full Bleed Edge to Edge */}
+      <header className="bg-white dark:bg-[#151C26] border-b border-[#D9E0E8] dark:border-[#293544] px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between transition-colors sticky top-0 z-30 w-full">
+        <div className="w-full flex items-center justify-between gap-4">
+          
+          {/* Brand Identification */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center justify-center w-8 h-8 rounded-md bg-[#24527A] dark:bg-[#6B9BC2] text-white dark:text-[#0F141C]">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold tracking-tight text-[#172033] dark:text-[#F1F4F8]">
+                  APEX CORRECTIONS
+                </span>
+                <span className="text-xs text-[#526176] dark:text-[#AAB6C5]">
+                  / Facility 09
+                </span>
               </div>
+              <p className="text-xs text-[#526176] dark:text-[#AAB6C5] hidden sm:block">
+                Custodial Intelligence & Operations
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          {/* Light / Dark Mode Toggle */}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="flex items-center justify-center p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
-            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            aria-label="Toggle Dark / Light Theme"
-          >
-            {isDarkMode ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-slate-700" />
-            )}
-          </button>
-
-          {/* Switch Staff / Auth Login Button */}
-          <button
-            onClick={onOpenAuthModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
-            title="Switch User Role / Authenticate"
-          >
-            <KeyRound className="w-3.5 h-3.5 text-sky-500" />
-            <span className="hidden md:inline">Switch Staff</span>
-          </button>
-
-          {/* Search */}
-          <div className="relative flex-1 sm:w-56 min-w-[160px]">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search ID, name, crime..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-slate-400 dark:focus:border-slate-700 font-sans placeholder-slate-400 dark:placeholder-slate-500"
-            />
+          {/* Center Search Input */}
+          <div className="hidden md:flex items-center gap-2 flex-1 max-w-sm mx-6">
+            <div className="relative w-full">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#526176] dark:text-[#AAB6C5]" />
+              <input
+                type="text"
+                placeholder="Search inmate roster..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#F5F7FA] dark:bg-[#0F141C] border border-[#D9E0E8] dark:border-[#293544] text-[#172033] dark:text-[#F1F4F8] text-xs rounded-md pl-8 pr-8 py-1.5 focus:outline-none focus:border-[#24527A] dark:focus:border-[#6B9BC2] placeholder-[#526176] dark:placeholder-[#AAB6C5]"
+              />
+              {searchTerm ? (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#526176] hover:text-[#172033] dark:text-[#AAB6C5] dark:hover:text-white"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              ) : (
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-[#526176] dark:text-[#AAB6C5] border border-[#D9E0E8] dark:border-[#293544] rounded px-1 py-0.2">
+                  /
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Tier Filter */}
-          <div className="relative">
-            <select
-              value={securityFilter}
-              onChange={(e) => setSecurityFilter(e.target.value)}
-              className="appearance-none bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-slate-400 dark:focus:border-slate-700 cursor-pointer font-sans"
+          {/* Right System Controls & User Menu */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Telemetry Status */}
+            <div className="relative hidden sm:block">
+              <button
+                onClick={() => setShowPresenceDropdown(!showPresenceDropdown)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-[#526176] dark:text-[#AAB6C5] hover:bg-[#F5F7FA] dark:hover:bg-[#0F141C] border border-transparent hover:border-[#D9E0E8] dark:hover:border-[#293544] transition-colors cursor-pointer"
+                title="System Telemetry Status"
+              >
+                <span className={`w-2 h-2 rounded-full ${isSocketConnected ? 'bg-[#167A5B] dark:bg-[#4DB58B]' : 'bg-[#A66A00] dark:bg-[#D6A34A]'}`} />
+                <span className="font-medium text-[#172033] dark:text-[#F1F4F8]">
+                  {onlineStaff.length > 0 ? `${onlineStaff.length} On Duty` : 'Online'}
+                </span>
+                <span className="font-mono text-[11px] opacity-75">{systemTime}</span>
+              </button>
+
+              {/* Online Personnel Popover */}
+              {showPresenceDropdown && (
+                <div className="absolute right-0 mt-2 w-56 rounded-md bg-white dark:bg-[#151C26] border border-[#D9E0E8] dark:border-[#293544] shadow-md z-50 p-3 text-xs">
+                  <div className="flex items-center justify-between border-b border-[#D9E0E8] dark:border-[#293544] pb-2 mb-2 font-medium text-[#526176] dark:text-[#AAB6C5]">
+                    <span>Connected Terminals</span>
+                    <span className="text-[10px] font-mono">WebSocket</span>
+                  </div>
+
+                  {onlineStaff.length === 0 ? (
+                    <p className="text-[#526176] dark:text-[#AAB6C5] py-1 text-xs">Standard broadcast active.</p>
+                  ) : (
+                    <ul className="space-y-1 max-h-40 overflow-y-auto">
+                      {onlineStaff.map((staff, idx) => (
+                        <li key={idx} className="flex items-center justify-between py-1 px-1.5 rounded bg-[#F5F7FA] dark:bg-[#0F141C] text-xs">
+                          <span className="font-medium text-[#172033] dark:text-[#F1F4F8]">{staff.username}</span>
+                          <span className="text-[10px] text-[#526176] dark:text-[#AAB6C5]">
+                            {staff.role}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Dark / Light Toggle */}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-1.5 rounded-md text-[#526176] hover:text-[#172033] dark:text-[#AAB6C5] dark:hover:text-[#F1F4F8] hover:bg-[#F5F7FA] dark:hover:bg-[#0F141C] border border-[#D9E0E8] dark:border-[#293544] transition-colors cursor-pointer"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              aria-label="Toggle Theme"
             >
-              <option value="ALL">All Tiers</option>
-              <option value="Maximum">Maximum Tier</option>
-              <option value="Medium">Medium Tier</option>
-              <option value="Minimum">Minimum Tier</option>
-              <option value="Isolation">Isolation Wing</option>
-            </select>
-            <Filter className="w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              {isDarkMode ? <Sun className="w-4 h-4 text-[#D6A34A]" /> : <Moon className="w-4 h-4 text-[#526176]" />}
+            </button>
+
+            {/* User Session Profile */}
+            <button
+              onClick={onOpenAuthModal}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium text-[#172033] dark:text-[#F1F4F8] hover:bg-[#F5F7FA] dark:hover:bg-[#0F141C] border border-[#D9E0E8] dark:border-[#293544] transition-colors cursor-pointer"
+              title="Access Control / Switch User"
+            >
+              <div className="w-5 h-5 rounded bg-[#24527A]/10 dark:bg-[#6B9BC2]/20 text-[#24527A] dark:text-[#6B9BC2] flex items-center justify-center text-[10px] font-bold">
+                {currentUser?.username?.charAt(0).toUpperCase() || 'O'}
+              </div>
+              <span>{currentUser?.username || 'Officer'}</span>
+              <span className="text-[11px] text-[#526176] dark:text-[#AAB6C5] font-normal">
+                ({role})
+              </span>
+            </button>
+          </div>
+        </div>
+      </header>
+      
+      {/* Container for Page Title and Operational Strip */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-5 space-y-4">
+        {/* 2. Page Header + Primary Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-[#172033] dark:text-[#F1F4F8] tracking-tight">
+              Custodial Operations & Inmate Directory
+            </h1>
+            <p className="text-xs sm:text-sm text-[#526176] dark:text-[#AAB6C5] mt-0.5">
+              Active facility rosters, security classifications, health directives, and telemetry audits.
+            </p>
           </div>
 
-          {/* Log Incident */}
-          <button
-            onClick={onOpenIncidentModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
-          >
-            <Bell className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-            <span className="hidden sm:inline">Log Event</span>
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Secondary Action */}
+            <button
+              onClick={onOpenIncidentModal}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium bg-white dark:bg-[#151C26] hover:bg-[#F5F7FA] dark:hover:bg-[#0F141C] text-[#172033] dark:text-[#F1F4F8] border border-[#D9E0E8] dark:border-[#293544] shadow-xs transition-colors cursor-pointer"
+            >
+              <Bell className="w-3.5 h-3.5 text-[#526176] dark:text-[#AAB6C5]" />
+              <span>File Incident</span>
+            </button>
 
-          {/* Intake New Record */}
-          <button
-            onClick={onOpenIntakeModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-sans font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-950 transition-colors cursor-pointer shadow-sm"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Intake New Record</span>
-          </button>
+            {/* Primary Action */}
+            <button
+              onClick={onOpenIntakeModal}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium bg-[#24527A] hover:bg-[#1B3E5C] dark:bg-[#6B9BC2] dark:hover:bg-[#85B2D6] text-white dark:text-[#0F141C] shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Intake Offender</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Compact Operational Summary Strip */}
+        <div className="bg-white dark:bg-[#151C26] border border-[#D9E0E8] dark:border-[#293544] rounded-lg p-4 shadow-xs w-full">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 divide-y lg:divide-y-0 lg:divide-x divide-[#D9E0E8] dark:divide-[#293544]">
+            
+            {/* Metric 1 */}
+            <div className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-[#526176] dark:text-[#AAB6C5] font-semibold block">
+                TOTAL IN CUSTODY
+              </span>
+              <div className="text-2xl font-semibold text-[#172033] dark:text-[#F1F4F8]">
+                {totalInmates}
+              </div>
+              <p className="text-xs text-[#526176] dark:text-[#AAB6C5]">
+                87.5% capacity · 120 facility beds
+              </p>
+            </div>
+
+            {/* Metric 2 */}
+            <div className="space-y-1 lg:pl-6 pt-3 lg:pt-0">
+              <span className="text-[11px] uppercase tracking-wider text-[#526176] dark:text-[#AAB6C5] font-semibold block">
+                ACTIVE IN FACILITY
+              </span>
+              <div className="text-2xl font-semibold text-[#172033] dark:text-[#F1F4F8]">
+                {activeInCustody}
+              </div>
+              <p className="text-xs text-[#526176] dark:text-[#AAB6C5]">
+                Nominal operational status
+              </p>
+            </div>
+
+            {/* Metric 3 */}
+            <div className="space-y-1 lg:pl-6 pt-3 lg:pt-0">
+              <span className="text-[11px] uppercase tracking-wider text-[#526176] dark:text-[#AAB6C5] font-semibold block">
+                HIGH ALERT / ISOLATION
+              </span>
+              <div className="text-2xl font-semibold text-[#B4232C] dark:text-[#E06A70]">
+                {highAlertFlags}
+              </div>
+              <p className="text-xs text-[#526176] dark:text-[#AAB6C5]">
+                2-officer tactical escort required
+              </p>
+            </div>
+
+            {/* Metric 4 */}
+            <div className="space-y-1 lg:pl-6 pt-3 lg:pt-0">
+              <span className="text-[11px] uppercase tracking-wider text-[#526176] dark:text-[#AAB6C5] font-semibold block">
+                ACTIVE SHIFT PERSONNEL
+              </span>
+              <div className="text-2xl font-semibold text-[#172033] dark:text-[#F1F4F8]">
+                {onDutyGuards}
+              </div>
+              <p className="text-xs text-[#526176] dark:text-[#AAB6C5]">
+                Shift Alpha-3 · Armed detail
+              </p>
+            </div>
+
+          </div>
         </div>
       </div>
-
-      {/* Quiet Top Stat Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 py-2 border-b border-slate-200 dark:border-slate-800/60 pb-5">
-        <StatCard
-          title="Registered inmates"
-          value={totalInmates}
-          subtext="87.5% of capacity"
-        />
-
-        <StatCard
-          title="Active in-custody"
-          value={activeInCustody}
-          subtext="Main blocks and isolation"
-        />
-
-        <StatCard
-          title="High alert"
-          value={highAlertFlags}
-          subtext="Requires escort detail"
-          isHighlighted={true}
-        />
-
-        <StatCard
-          title="On-duty personnel"
-          value={onDutyGuards}
-          subtext="Shift alpha-3 armed"
-        />
-      </div>
-    </header>
+    </div>
   );
 }

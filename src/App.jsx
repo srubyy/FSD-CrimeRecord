@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import TopNav from './components/TopNav.jsx';
 import InmateTable from './components/InmateTable.jsx';
@@ -7,6 +7,7 @@ import IntakeModal from './components/IntakeModal.jsx';
 import InmateDetailDrawer from './components/InmateDetailDrawer.jsx';
 import IncidentModal from './components/IncidentModal.jsx';
 import AuthModal from './components/AuthModal.jsx';
+import ToastNotification from './components/ToastNotification.jsx';
 import { AppContext } from './context/AppContext.jsx';
 import { addInmate, updateInmate, deleteInmate } from './store/inmatesSlice.js';
 import { addAuditLog } from './store/auditLogsSlice.js';
@@ -20,15 +21,25 @@ export default function App() {
   const auditLogs = useSelector((state) => state.auditLogs);
   const currentUser = useSelector((state) => state.auth.user);
 
-  // Consume global UI context (useContext)
+  // Global UI context
   const { isDarkMode, searchTerm, securityFilter } = useContext(AppContext);
 
-  // Modal & Drawer State (Local to App.jsx)
+  // Modal & Drawer State
   const [isIntakeOpen, setIsIntakeOpen] = useState(false);
   const [selectedInmate, setSelectedInmate] = useState(null);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [incidentInmateTarget, setIncidentInmateTarget] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Toast Notification State
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((toastData) => {
+    setToast(toastData);
+    setTimeout(() => {
+      setToast(prev => (prev === toastData ? null : prev));
+    }, 4500);
+  }, []);
 
   // WebSockets Real-Time Integration
   const { socket, isConnected } = useSocket();
@@ -38,33 +49,35 @@ export default function App() {
   useEffect(() => {
     if (!socket) return;
 
-    // Real-Time Inmate Created
     const handleInmateCreated = (newInmate) => {
-      console.log('[CrimeNet Socket Event] inmate:created received:', newInmate);
       dispatch(addInmate(newInmate));
+      showToast({
+        type: 'info',
+        title: 'Registry Broadcast',
+        message: `Offender ${newInmate.fullName} admitted via network terminal.`
+      });
     };
 
-    // Real-Time Inmate Updated
     const handleInmateUpdated = (updatedInmate) => {
-      console.log('[CrimeNet Socket Event] inmate:updated received:', updatedInmate);
       dispatch(updateInmate(updatedInmate));
     };
 
-    // Real-Time Inmate Deleted
     const handleInmateDeleted = (inmateId) => {
-      console.log('[CrimeNet Socket Event] inmate:deleted received:', inmateId);
       dispatch(deleteInmate(inmateId));
     };
 
-    // Real-Time Audit Log Created
     const handleAuditLogCreated = (newLog) => {
-      console.log('[CrimeNet Socket Event] auditlog:created received:', newLog);
       dispatch(addAuditLog(newLog));
+      if (newLog.severity === 'rose') {
+        showToast({
+          type: 'error',
+          title: 'Critical Alert',
+          message: newLog.action
+        });
+      }
     };
 
-    // Real-Time Presence List Updated
     const handlePresenceUpdate = (staffList) => {
-      console.log('[CrimeNet Socket Event] presence:update received:', staffList);
       setOnlineStaff(staffList);
     };
 
@@ -81,9 +94,9 @@ export default function App() {
       socket.off('auditlog:created', handleAuditLogCreated);
       socket.off('presence:update', handlePresenceUpdate);
     };
-  }, [socket, dispatch]);
+  }, [socket, dispatch, showToast]);
 
-  // Sync dark class on html root element (useEffect)
+  // Sync dark class on html root element
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -119,38 +132,52 @@ export default function App() {
       id: `LOG-${Math.floor(9000 + Math.random() * 999)}`,
       timestamp: 'Just now',
       user: `${currentUser?.username || 'Staff'} (${currentUser?.role || 'Officer'})`,
-      action: 'New Prisoner Intake Registered',
+      action: 'Offender Custody Intake Completed',
       target: `Inmate ${newRecord.fullName} (${newRecord.id})`,
       type: 'intake',
-      severity: newRecord.securityTier === 'Maximum' ? 'rose' : 'emerald',
-      details: `Assigned to ${newRecord.cellBlock}. Security Tier: ${newRecord.securityTier}.`,
+      severity: newRecord.securityTier === 'Maximum' || newRecord.securityTier === 'Isolation' ? 'rose' : 'emerald',
+      details: `Assigned to ${newRecord.cellBlock} (${newRecord.cellNumber}). Tier: ${newRecord.securityTier}.`,
     };
 
     dispatch(addAuditLog(auditEntry));
+    showToast({
+      type: 'success',
+      title: 'Offender Intake Registered',
+      message: `${newRecord.fullName} (${newRecord.id}) booked into ${newRecord.cellBlock}.`
+    });
   };
 
   // Handler for deleting an inmate record (Admin only)
   const handleDeleteInmate = (inmateToDelete) => {
     if (currentUser?.role !== 'Admin') {
-      alert('Access Denied: Only Admin users can expunge inmate records.');
+      showToast({
+        type: 'error',
+        title: 'Access Denied',
+        message: 'Expungement requires Administrator credentials.'
+      });
       return;
     }
 
-    if (window.confirm(`Are you sure you want to expunge record ${inmateToDelete.id} (${inmateToDelete.fullName})?`)) {
+    if (window.confirm(`Expunge custody record for ${inmateToDelete.id} (${inmateToDelete.fullName})? This action cannot be reversed.`)) {
       dispatch(deleteInmate(inmateToDelete.id));
 
       const auditEntry = {
         id: `LOG-${Math.floor(9000 + Math.random() * 999)}`,
         timestamp: 'Just now',
         user: `${currentUser?.username} (Admin)`,
-        action: 'Prisoner Record Permanently Expunged',
+        action: 'Custody Record Expunged from Registry',
         target: `Inmate ${inmateToDelete.fullName} (${inmateToDelete.id})`,
         type: 'alert',
         severity: 'rose',
-        details: `Record ${inmateToDelete.id} expunged from system DB by Admin.`,
+        details: `Official custody record ${inmateToDelete.id} expunged by Administrator authorization.`,
       };
 
       dispatch(addAuditLog(auditEntry));
+      showToast({
+        type: 'info',
+        title: 'Record Expunged',
+        message: `Custody record ${inmateToDelete.id} permanently removed.`
+      });
     }
   };
 
@@ -161,6 +188,11 @@ export default function App() {
       user: `${currentUser?.username || 'Staff'} (${currentUser?.role || 'Officer'})`,
     };
     dispatch(addAuditLog(formattedLog));
+    showToast({
+      type: 'success',
+      title: 'Incident Telemetry Dispatched',
+      message: `${formattedLog.action} successfully broadcast.`
+    });
   };
 
   // Open incident modal for a specific inmate
@@ -170,28 +202,29 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-sans">
-        {/* Top Header & Quiet Stat Row */}
-        <TopNav
-          onOpenIntakeModal={() => setIsIntakeOpen(true)}
-          onOpenIncidentModal={() => {
-            setIncidentInmateTarget(null);
-            setIsIncidentModalOpen(true);
-          }}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          totalInmates={totalInmates}
-          activeInCustody={activeInCustody}
-          highAlertFlags={highAlertFlags}
-          onDutyGuards={onDutyGuards}
-          onlineStaff={onlineStaff}
-          isSocketConnected={isConnected}
-        />
+    <div className={`min-h-screen transition-colors duration-150 ${isDarkMode ? 'dark bg-[#0F141C] text-[#F1F4F8]' : 'bg-[#F5F7FA] text-[#172033]'}`}>
+      {/* Top Header full-bleed */}
+      <TopNav
+        onOpenIntakeModal={() => setIsIntakeOpen(true)}
+        onOpenIncidentModal={() => {
+          setIncidentInmateTarget(null);
+          setIsIncidentModalOpen(true);
+        }}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        totalInmates={totalInmates}
+        activeInCustody={activeInCustody}
+        highAlertFlags={highAlertFlags}
+        onDutyGuards={onDutyGuards}
+        onlineStaff={onlineStaff}
+        isSocketConnected={isConnected}
+      />
 
-        {/* Main Content Grid */}
-        <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Main Content Area (Directory Table) */}
-          <section className="lg:col-span-8">
+      {/* Main Body - Full Width Edge-to-Edge with minimal margin waste */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-5 space-y-5 font-sans">
+        {/* Main Content Grid (Primary Directory / Audit Stream) */}
+        <main className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start w-full">
+          {/* Main Directory Table */}
+          <section className="lg:col-span-8 xl:col-span-8 2xl:col-span-9">
             <InmateTable
               inmates={searchedInmates}
               onSelectInmate={setSelectedInmate}
@@ -200,8 +233,8 @@ export default function App() {
             />
           </section>
 
-          {/* Audit Stream Sidebar */}
-          <section className="lg:col-span-4">
+          {/* Secondary Audit Stream */}
+          <section className="lg:col-span-4 xl:col-span-4 2xl:col-span-3">
             <AuditSidebar
               logs={auditLogs}
               onOpenIncidentModal={() => {
@@ -212,7 +245,7 @@ export default function App() {
           </section>
         </main>
 
-        {/* Interactive Modals */}
+        {/* Modals & Drawers */}
         <IntakeModal
           isOpen={isIntakeOpen}
           onClose={() => setIsIntakeOpen(false)}
@@ -236,7 +269,11 @@ export default function App() {
         <AuthModal
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}
+          onShowToast={showToast}
         />
+
+        {/* Minimalist Toast Feedback */}
+        <ToastNotification toast={toast} onDismiss={() => setToast(null)} />
       </div>
     </div>
   );
